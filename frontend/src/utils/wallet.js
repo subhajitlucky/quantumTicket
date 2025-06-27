@@ -100,7 +100,7 @@ export const switchToSepoliaNetwork = async () => {
             symbol: 'ETH',
             decimals: 18
           },
-          rpcUrls: ['https://eth-sepolia.g.alchemy.com/v2/5TdSuP-83GcDsTZgXtUk9kydM8LRMlWw'],
+          rpcUrls: ['https://rpc.sepolia.org'],
           blockExplorerUrls: ['https://sepolia.etherscan.io']
         }]
       });

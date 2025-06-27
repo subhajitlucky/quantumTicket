@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-const HomePage = ({ setCurrentPage }) => {
+const HomePage = () => {
+  const navigate = useNavigate();
   // Dummy data for featured events
   const featuredEvents = [
     {
@@ -59,13 +61,13 @@ const HomePage = ({ setCurrentPage }) => {
             <div className="hero-buttons">
               <button 
                 className="btn btn-primary btn-lg hero-btn"
-                onClick={() => setCurrentPage('mint')}
+                onClick={() => navigate('/mint')}
               >
                 🚀 Create Event
               </button>
               <button 
                 className="btn btn-secondary btn-lg hero-btn"
-                onClick={() => setCurrentPage('tickets')}
+                onClick={() => navigate('/tickets')}
               >
                 🎟️ View My Tickets
               </button>
@@ -127,7 +129,7 @@ const HomePage = ({ setCurrentPage }) => {
                     </div>
                     <button 
                       className="btn btn-primary btn-sm"
-                      onClick={() => setCurrentPage('events')}
+                      onClick={() => navigate('/events')}
                     >
                       Buy Ticket
                     </button>
@@ -195,7 +197,7 @@ const HomePage = ({ setCurrentPage }) => {
             </p>
             <button 
               className="btn btn-primary btn-lg cta-button"
-              onClick={() => setCurrentPage('mint')}
+              onClick={() => navigate('/mint')}
             >
               🎫 Create Event Now
             </button>
