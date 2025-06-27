@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { useContract } from '../hooks/useContract';
 import { ethers } from 'ethers';
-import '../components.css';
 
 // Helper function to get a future date (tomorrow) in ISO format
 const getTomorrowDate = () => {
@@ -14,52 +13,47 @@ const getTomorrowDate = () => {
 
 const MintTicket = () => {
   const { isConnected, chainId, account } = useWallet();
-  const { contract, isLoading: contractLoading, error: contractError, isOwner, mintNewTicket } = useContract();
+  const { contract, isLoading: contractLoading, error: contractError } = useContract();
   
-  const [formData, setFormData] = useState({
+  // Event creation form data
+  const [eventData, setEventData] = useState({
     eventName: '',
     eventDate: getTomorrowDate(),
     venue: '',
-    price: '0.00001',
-    uri: 'ipfs://your-metadata-uri-here' // Default URI
+    ticketPrice: '0.001',
+    maxTickets: '100',
+    metadataURI: 'ipfs://your-metadata-uri-here'
   });
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   
-  const handleChange = (e) => {
+  const handleEventDataChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setEventData(prev => ({
       ...prev,
       [name]: value
     }));
   };
   
-  const handleSubmit = async (e) => {
+
+  
+  const handleCreateEvent = async (e) => {
     e.preventDefault();
     
-    // Check if wallet is connected
     if (!isConnected) {
       setError('Please connect your wallet first');
       return;
     }
     
-    // Check if on the correct network (Sepolia = chainId 11155111)
     if (chainId !== 11155111 && chainId !== 1337) {
       setError('Please switch to the Sepolia network');
       return;
     }
     
-    // Check if contract is loaded
     if (!contract) {
       setError(contractError || 'Contract not initialized');
-      return;
-    }
-    
-    // Check if user is the contract owner
-    if (!isOwner) {
-      setError('Only the contract owner can mint tickets');
       return;
     }
     
@@ -67,155 +61,207 @@ const MintTicket = () => {
       setIsLoading(true);
       setError(null);
       
-      // Get current timestamp and convert form date to timestamp
       const now = Math.floor(Date.now() / 1000);
-      const eventDate = new Date(formData.eventDate);
+      const eventDate = new Date(eventData.eventDate);
       const timestamp = Math.floor(eventDate.getTime() / 1000);
       
-      console.log('Current time:', new Date(now * 1000).toLocaleString());
-      console.log('Selected event time:', eventDate.toLocaleString());
-      console.log('Current timestamp:', now);
-      console.log('Event timestamp:', timestamp);
-      
-      // Validate that the date is in the future
       if (timestamp <= now) {
-        setError(`Event date must be in the future. Current time: ${new Date(now * 1000).toLocaleString()}, Selected time: ${eventDate.toLocaleString()}`);
+        setError(`Event date must be in the future`);
         setIsLoading(false);
         return;
       }
       
-      // Convert price to wei
-      const priceInWei = ethers.utils.parseEther(formData.price);
+      const ticketPriceInWei = ethers.utils.parseEther(eventData.ticketPrice);
       
-      // Mint the ticket using our helper function
-      await mintNewTicket(
-        formData.eventName,
+      const tx = await contract.createEvent(
+        eventData.eventName,
         timestamp,
-        formData.venue,
-        priceInWei,
-        formData.uri
+        eventData.venue,
+        ticketPriceInWei,
+        parseInt(eventData.maxTickets),
+        eventData.metadataURI
       );
       
-      setSuccess(true);
-      setFormData({
+      await tx.wait();
+      
+      setSuccess('Event created successfully! 🎉');
+      setEventData({
         eventName: '',
         eventDate: getTomorrowDate(),
         venue: '',
-        price: '0.00001',
-        uri: 'ipfs://your-metadata-uri-here'
+        ticketPrice: '0.001',
+        maxTickets: '100',
+        metadataURI: 'ipfs://your-metadata-uri-here'
       });
       
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        setSuccess(false);
-      }, 5000);
+      setTimeout(() => setSuccess(false), 5000);
     } catch (err) {
-      console.error('Error minting ticket:', err);
-      setError(err.message || 'Failed to mint ticket');
+      console.error('Error creating event:', err);
+      setError(err.message || 'Failed to create event');
     } finally {
       setIsLoading(false);
     }
   };
   
+  // Show connection prompt if not connected
+  if (!isConnected) {
+    return (
+      <div className="create-event-page">
+        <div className="page-container">
+          <div className="card">
+            <div className="card-header">
+              <h2 className="card-title">
+                🎫 Create Event
+              </h2>
+              <p className="card-description">
+                Create new events with our secure blockchain infrastructure
+              </p>
+            </div>
+            <div className="empty-state">
+              <div className="empty-state-icon">🔗</div>
+              <h3 className="empty-state-title">Connect Your Wallet</h3>
+              <p className="empty-state-description">
+                Please connect your wallet to create events
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
   return (
-    <div className="mint-ticket">
-      <h2>Mint New Ticket</h2>
+    <div className="create-event-page">
+      <div className="page-container">
+        <div className="card">
+          <div className="card-header">
+            <h2 className="card-title">
+              🎫 Create Event
+            </h2>
+            <p className="card-description">
+              Create new events with our secure blockchain infrastructure
+            </p>
+          </div>
       
+      {/* Alert Messages */}
       {error && (
-        <div className="error-message">
+        <div className="alert alert-error">
           {error}
         </div>
       )}
       
       {success && (
-        <div className="success-message">
-          Ticket minted successfully!
+        <div className="alert alert-success">
+          {success}
         </div>
       )}
       
-      {!isOwner && isConnected && (
-        <div className="error-message">
-          You are not the contract owner. Only the owner can mint tickets.
+      {/* Create Event Form */}
+      <form onSubmit={handleCreateEvent} className="form-grid">
+          <div className="form-group">
+            <label htmlFor="eventName" className="form-label">Event Name</label>
+            <input
+              type="text"
+              id="eventName"
+              name="eventName"
+              className="form-input"
+              value={eventData.eventName}
+              onChange={handleEventDataChange}
+              placeholder="Enter event name"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="eventDate" className="form-label">Event Date & Time</label>
+            <input
+              type="datetime-local"
+              id="eventDate"
+              name="eventDate"
+              className="form-input"
+              value={eventData.eventDate}
+              onChange={handleEventDataChange}
+              min={getTomorrowDate()}
+              required
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="venue" className="form-label">Venue Location</label>
+            <input
+              type="text"
+              id="venue"
+              name="venue"
+              className="form-input"
+              value={eventData.venue}
+              onChange={handleEventDataChange}
+              placeholder="Enter venue location"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="ticketPrice" className="form-label">Ticket Price (ETH)</label>
+            <input
+              type="number"
+              id="ticketPrice"
+              name="ticketPrice"
+              className="form-input"
+              value={eventData.ticketPrice}
+              onChange={handleEventDataChange}
+              step="0.001"
+              min="0"
+              placeholder="0.001"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="maxTickets" className="form-label">Maximum Tickets</label>
+            <input
+              type="number"
+              id="maxTickets"
+              name="maxTickets"
+              className="form-input"
+              value={eventData.maxTickets}
+              onChange={handleEventDataChange}
+              min="1"
+              max="100000"
+              placeholder="100"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="metadataURI" className="form-label">Metadata URI</label>
+            <input
+              type="text"
+              id="metadataURI"
+              name="metadataURI"
+              className="form-input"
+              value={eventData.metadataURI}
+              onChange={handleEventDataChange}
+              placeholder="ipfs://your-metadata-uri-here"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-lg"
+            disabled={isLoading}
+          >
+            {isLoading ? <span className="spinner"></span> : '🚀 Create Event'}
+          </button>
+        </form>
         </div>
-      )}
-      
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="eventName">Event Name</label>
-          <input
-            type="text"
-            id="eventName"
-            name="eventName"
-            value={formData.eventName}
-            onChange={handleChange}
-            required
-            disabled={isLoading || !isOwner}
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="eventDate">Event Date</label>
-          <input
-            type="datetime-local"
-            id="eventDate"
-            name="eventDate"
-            value={formData.eventDate}
-            onChange={handleChange}
-            min={getTomorrowDate()}
-            required
-            disabled={isLoading || !isOwner}
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="venue">Venue</label>
-          <input
-            type="text"
-            id="venue"
-            name="venue"
-            value={formData.venue}
-            onChange={handleChange}
-            required
-            disabled={isLoading || !isOwner}
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="price">Price (ETH)</label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            step="0.001"
-            min="0"
-            required
-            disabled={isLoading || !isOwner}
-          />
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="uri">Metadata URI</label>
-          <input
-            type="text"
-            id="uri"
-            name="uri"
-            value={formData.uri}
-            onChange={handleChange}
-            placeholder="ipfs://"
-            disabled={isLoading || !isOwner}
-          />
-          <small>Default URI is already provided.</small>
-        </div>
-        
-        <button
-          type="submit"
-          disabled={isLoading || !isConnected || contractLoading || !contract || !isOwner}
-        >
-          {isLoading ? 'Minting...' : 'Mint Ticket'}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

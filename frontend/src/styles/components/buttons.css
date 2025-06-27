@@ -1,0 +1,330 @@
+/* Button Components */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem);
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: inherit;
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  min-height: 44px; /* Minimum touch target */
+  min-width: 44px;
+  text-align: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:focus {
+  outline: 2px solid var(--primary-400);
+  outline-offset: 2px;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: var(--gradient-button);
+  color: var(--neutral-0);
+  border: 1px solid var(--primary-500);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--primary-400) 0%, var(--primary-500) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--neutral-100);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--neutral-0);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: var(--success-500);
+  color: var(--neutral-0);
+  border: 1px solid var(--success-600);
+}
+
+.btn-success:hover {
+  background: var(--success-600);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Button Sizes */
+.btn-lg {
+  padding: clamp(0.75rem, 3vw, 1rem) clamp(1.5rem, 6vw, 2rem);
+  font-size: clamp(1rem, 3vw, 1.125rem);
+  min-height: 48px;
+}
+
+.btn-sm {
+  padding: clamp(0.375rem, 1.5vw, 0.5rem) clamp(0.75rem, 3vw, 1rem);
+  font-size: clamp(0.75rem, 2vw, 0.875rem);
+  min-height: 36px;
+  min-width: 36px;
+}
+
+.btn-xs {
+  padding: clamp(0.25rem, 1vw, 0.375rem) clamp(0.5rem, 2vw, 0.75rem);
+  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+  min-height: 32px;
+  min-width: 32px;
+}
+
+/* Disabled State */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* Connect Button Special Style */
+.connect-button {
+  background: var(--gradient-button);
+  color: var(--neutral-0);
+  border: 1px solid var(--primary-500);
+  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem);
+  border-radius: var(--radius-lg);
+  font-family: inherit;
+  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(0.25rem, 1vw, 0.5rem);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  min-height: 44px;
+  min-width: 44px;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.connect-button:hover {
+  background: linear-gradient(135deg, var(--primary-400) 0%, var(--primary-500) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.connect-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.connect-button:focus {
+  outline: 2px solid var(--primary-400);
+  outline-offset: 2px;
+}
+
+.connect-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* Button Icons */
+.btn-icon {
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  flex-shrink: 0;
+}
+
+.btn-sm .btn-icon {
+  font-size: clamp(0.75rem, 1.8vw, 0.875rem);
+}
+
+.btn-lg .btn-icon {
+  font-size: clamp(1rem, 2.5vw, 1.125rem);
+}
+
+.btn-xs .btn-icon {
+  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+}
+
+/* Button Groups */
+.btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(0.5rem, 2vw, 1rem);
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-group .btn {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Full Width Buttons */
+.btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Tablet Responsive */
+@media (max-width: 1024px) {
+  .btn {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+  }
+  
+  .btn-lg {
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-lg);
+  }
+  
+  .connect-button {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--text-sm);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .btn {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    min-height: 48px; /* Larger touch targets on mobile */
+  }
+
+  .btn-lg {
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--text-base);
+    min-height: 52px;
+  }
+
+  .btn-sm {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    min-height: 40px;
+  }
+
+  .connect-button {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    min-height: 48px;
+  }
+  
+  .btn-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .btn-group .btn {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .btn {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+    min-height: 44px;
+  }
+
+  .btn-lg {
+    padding: var(--space-3) var(--space-4);
+    font-size: var(--text-sm);
+    min-height: 48px;
+  }
+
+  .btn-sm {
+    padding: var(--space-1) var(--space-2);
+    font-size: 0.7rem;
+    min-height: 36px;
+  }
+
+  .connect-button {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--text-xs);
+  }
+}
+
+/* Very Small Mobile */
+@media (max-width: 360px) {
+  .btn {
+    padding: var(--space-2);
+    font-size: 0.7rem;
+  }
+
+  .btn-lg {
+    padding: var(--space-3);
+    font-size: var(--text-xs);
+  }
+
+  .connect-button {
+    padding: var(--space-2);
+    font-size: 0.7rem;
+  }
+}
+
+/* Landscape phone optimization */
+@media (max-height: 500px) and (orientation: landscape) {
+  .btn,
+  .connect-button {
+    min-height: 40px;
+  }
+  
+  .btn-lg {
+    min-height: 44px;
+  }
+  
+  .btn-sm {
+    min-height: 32px;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .btn {
+    border-width: 2px;
+  }
+  
+  .btn:focus {
+    outline-width: 3px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .connect-button {
+    transition: none;
+  }
+  
+  .btn:hover,
+  .connect-button:hover {
+    transform: none;
+  }
+} 

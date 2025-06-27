@@ -1,5 +1,5 @@
 {
-  "name": "blockchain",
+  "name": "quantumticket-contracts",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -7,7 +7,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
+    "compile": "npx hardhat compile"
   },
   "keywords": [],
   "author": "",

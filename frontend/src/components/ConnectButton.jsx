@@ -1,6 +1,6 @@
 import React from 'react';
 import { useWallet } from '../hooks/useWallet';
-import '../components.css';
+// import '../components.css';
 
 const ConnectButton = () => {
   const { isConnected, account, connectWallet, disconnectWallet, formatAddress } = useWallet();

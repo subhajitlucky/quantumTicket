@@ -111,11 +111,18 @@ export function useWallet() {
 
   // Disconnect wallet
   const disconnectWallet = () => {
+    // Clear local state
     setProvider(null);
     setSigner(null);
     setAccount('');
     setChainId(null);
     setIsConnected(false);
+    setError(null);
+    
+    // Optional: You can't actually force disconnect from MetaMask via code
+    // MetaMask doesn't allow dApps to programmatically disconnect
+    // The user must manually disconnect from MetaMask
+    console.log('Wallet disconnected from app. To fully disconnect, please disconnect from MetaMask manually.');
   };
 
   // Format address for display (0x1234...5678)

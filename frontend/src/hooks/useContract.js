@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWallet } from './useWallet';
-import EventTicketABI from '../contracts/EventTicket.json';
+import QuantumTicketABI from '../contracts/QuantumTicket.json';
 
 // Contract addresses for different networks
 const CONTRACT_ADDRESSES = {
-  11155111: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000', // Sepolia
+  11155111: import.meta.env.VITE_CONTRACT_ADDRESS || '0x3D08c28d26DfDa846283008E9715F07bF4871dF0', // Sepolia
   80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai
 };
 
@@ -37,7 +37,7 @@ export function useContract() {
         const contractAddress = CONTRACT_ADDRESSES[chainId];
         const contractInstance = new ethers.Contract(
           contractAddress,
-          EventTicketABI.abi,
+          QuantumTicketABI.abi,
           signer
         );
 
