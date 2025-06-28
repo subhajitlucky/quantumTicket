@@ -34,7 +34,7 @@ jobs:
       - name: Build application
         run: |
           cd frontend
-          npm run build
+          GITHUB_PAGES=true npm run build
           
       - name: Setup Pages
         if: github.ref == 'refs/heads/main'
