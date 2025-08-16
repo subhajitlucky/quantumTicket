@@ -37,7 +37,6 @@ function Navbar() {
       <div className="navbar-container">
         {/* Logo */}
         <Link to="/" className="navbar-logo">
-          <span className="logo-icon">⚡</span>
           <span className="logo-text">QuantumTicket</span>
         </Link>
         
@@ -48,28 +47,28 @@ function Navbar() {
             className={`nav-link ${isActive('/') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
-            <span className="nav-icon">🏠</span> Home
+            Home
           </Link>
           <Link 
             to="/mint" 
             className={`nav-link ${isActive('/mint') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
-            <span className="nav-icon">🎫</span> Create Event
+            Create Event
           </Link>
           <Link 
             to="/events" 
             className={`nav-link ${isActive('/events') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
-            <span className="nav-icon">🎪</span> Events
+            Events
           </Link>
           <Link 
             to="/tickets" 
             className={`nav-link ${isActive('/tickets') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
-            <span className="nav-icon">🎟️</span> My Tickets
+            My Tickets
           </Link>
         </nav>
         

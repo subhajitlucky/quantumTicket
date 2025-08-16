@@ -253,7 +253,7 @@ const TicketList = () => {
       await tx.wait();
       console.log('Transaction confirmed');
       
-      setSuccess(`Ticket #${tokenId} used successfully! ✅`);
+      setSuccess(`Ticket #${tokenId} used successfully!`);
       
       setTimeout(() => {
         setSuccess(null);
@@ -335,7 +335,7 @@ const TicketList = () => {
       <div className="page-container">
         <div className="section-header">
           <h2 className="section-title">
-            🎟️ My Tickets
+            My Tickets
           </h2>
           <p className="section-subtitle">
             View and manage your NFT tickets from this platform
@@ -362,8 +362,8 @@ const TicketList = () => {
           </h3>
           <button 
             onClick={handleRefresh}
-            disabled={isLoading || !isConnected}
-            className="btn btn-secondary btn-sm"
+            disabled={isLoading}
+            className={`btn btn-secondary btn-sm ${!isConnected ? 'btn-disabled' : ''}`}
             title={!isConnected ? "Connect wallet to refresh" : "Refresh tickets"}
           >
             {isLoading ? (
@@ -373,7 +373,7 @@ const TicketList = () => {
               </>
             ) : (
               <>
-                🔄 Refresh
+                Refresh
               </>
             )}
           </button>
@@ -382,7 +382,7 @@ const TicketList = () => {
       {/* Content based on wallet connection status */}
       {!isConnected ? (
         <div className="empty-state">
-          <div className="empty-state-icon">🔗</div>
+          <div className="empty-state-icon">🔌</div>
           <h3 className="empty-state-title">Connect Your Wallet</h3>
           <p className="empty-state-description">
             Please connect your wallet to view your NFT tickets
@@ -414,7 +414,7 @@ const TicketList = () => {
       {/* Empty State */}
       {!isLoading && tickets.length === 0 && (
         <div className="empty-state">
-          <div className="empty-state-icon">🎫</div>
+          <div className="empty-state-icon">🎟️</div>
           <h3 className="empty-state-title">No Tickets Found</h3>
           <p className="empty-state-description">
             You don't have any tickets yet. Purchase tickets from the Mint Tickets section to get started!
@@ -504,7 +504,7 @@ const TicketList = () => {
                         Using Ticket...
                       </>
                     ) : (
-                      '🎫 Use Ticket'
+                      'Use Ticket'
                     )}
                   </button>
                 </div>

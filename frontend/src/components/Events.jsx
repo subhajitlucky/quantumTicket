@@ -157,7 +157,7 @@ const Events = () => {
 
       await tx.wait();
 
-      setSuccess('Ticket purchased successfully! 🎫');
+      setSuccess('Ticket purchased successfully!');
       setSelectedEvent(null);
       setTicketData({
         tokenURI: 'ipfs://your-ticket-metadata-uri-here'
@@ -193,13 +193,13 @@ const Events = () => {
       <div className="page-container">
         <div className="section-header" style={{marginBottom: 'var(--space-6)'}}>
           <h2 className="section-title">
-            🎪 Browse Events
+            Browse Events
           </h2>
           <p className="section-subtitle">
             Discover and purchase tickets for amazing events happening near you
             {!isConnected && (
               <span style={{ display: 'block', color: 'var(--warning-500)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
-                💡 Connect your wallet to purchase tickets
+                Connect your wallet to purchase tickets
               </span>
             )}
           </p>
@@ -226,7 +226,7 @@ const Events = () => {
           </div>
         ) : events.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">🎫</div>
+            <div className="empty-state-icon">🎟️</div>
             <h3 className="empty-state-title">No Events Available</h3>
             <p className="empty-state-description">
               No active events are currently available. Check back later or create your own event!
@@ -237,7 +237,7 @@ const Events = () => {
             {events.map(event => (
               <div key={event.id} className="event-card">
                 <div className="event-image">
-                  <span className="event-icon">🎪</span>
+                  <span className="event-icon">🎫</span>
                   <div className="event-category">Live Event</div>
                 </div>
                 
@@ -315,7 +315,7 @@ const Events = () => {
               position: 'relative'
             }}>
               <div className="card-header">
-                <h3 className="card-title">🎫 Purchase Ticket</h3>
+                <h3 className="card-title">Purchase Ticket</h3>
                 <button 
                   onClick={() => setSelectedEvent(null)}
                   style={{
@@ -335,9 +335,9 @@ const Events = () => {
 
               <div className="alert alert-info">
                 <strong>Event: {selectedEvent.name}</strong><br/>
-                📅 {formatDate(selectedEvent.date)}<br/>
-                📍 {selectedEvent.venue}<br/>
-                💰 {selectedEvent.price} ETH + 0.0001 ETH platform fee
+                {formatDate(selectedEvent.date)}<br/>
+                {selectedEvent.venue}<br/>
+                {selectedEvent.price} ETH + 0.0001 ETH platform fee
               </div>
 
               <form onSubmit={(e) => {

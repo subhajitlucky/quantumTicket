@@ -1,48 +1,137 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useContract } from '../hooks/useContract';
+import { ethers } from 'ethers';
+import QuantumTicketABI from '../contracts/QuantumTicket.json';
+
+// Contract addresses for different networks
+const CONTRACT_ADDRESSES = {
+  11155111: import.meta.env.VITE_CONTRACT_ADDRESS || '0x3D08c28d26DfDa846283008E9715F07bF4871dF0', // Sepolia
+  80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai
+  1337: 'localhost' // Local development
+};
 
 const HomePage = () => {
   const navigate = useNavigate();
-  // Dummy data for featured events
-  const featuredEvents = [
-    {
-      id: 1,
-      name: "TechCon 2024",
-      date: "Dec 15, 2024",
-      venue: "San Francisco Convention Center",
-      price: "0.05",
-      image: "🎯",
-      category: "Technology",
-      ticketsLeft: 47
-    },
-    {
-      id: 2,
-      name: "Crypto Music Festival",
-      date: "Jan 20, 2025",
-      venue: "Miami Beach Arena",
-      price: "0.08",
-      image: "🎵",
-      category: "Music",
-      ticketsLeft: 123
-    },
-    {
-      id: 3,
-      name: "NFT Art Exhibition",
-      date: "Feb 5, 2025",
-      venue: "New York Gallery District",
-      price: "0.03",
-      image: "🎨",
-      category: "Art",
-      ticketsLeft: 89
-    }
-  ];
+  const { contract } = useContract();
+  const [events, setEvents] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [readOnlyContract, setReadOnlyContract] = useState(null);
 
+  // Platform statistics - these could be fetched from a backend or contract in the future
   const platformStats = [
-    { number: "10,000+", label: "Events Created", icon: "🎪" },
-    { number: "50,000+", label: "Tickets Sold", icon: "🎫" },
+    { number: "10,000+", label: "Events Created", icon: "🎫" },
+    { number: "50,000+", label: "Tickets Sold", icon: "🎟️" },
     { number: "5,000+", label: "Happy Users", icon: "😊" },
     { number: "99.9%", label: "Uptime", icon: "⚡" }
   ];
+
+  // Initialize read-only contract for fetching events without wallet
+  useEffect(() => {
+    const initReadOnlyContract = async () => {
+      try {
+        // Use a reliable public RPC endpoint directly.
+        const provider = new ethers.providers.JsonRpcProvider('https://sepolia.drpc.org');
+        const contractAddress = CONTRACT_ADDRESSES[11155111];
+
+        const readContract = new ethers.Contract(
+          contractAddress,
+          QuantumTicketABI.abi,
+          provider
+        );
+
+        // Test connection by fetching total events, which should not revert even if 0.
+        await readContract.getTotalEvents();
+        setReadOnlyContract(readContract);
+        console.log('Read-only contract initialized successfully.');
+      } catch (err) {
+        console.error('Error initializing read-only contract:', err);
+        setError('Unable to connect to the blockchain. Please check your connection and refresh.');
+      }
+    };
+
+    initReadOnlyContract();
+  }, []);
+
+  // Fetch real events from the blockchain
+  const loadEvents = async () => {
+    const contractToUse = readOnlyContract || contract;
+    if (!contractToUse) {
+      // Still show loading state while waiting for contract
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const totalEvents = await contractToUse.getTotalEvents();
+      console.log('Total events found:', totalEvents.toString());
+      
+      if (totalEvents.isZero()) {
+        setEvents([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const eventPromises = [];
+      for (let i = 0; i < totalEvents; i++) {
+        eventPromises.push(contractToUse.getEventDetails(i));
+      }
+      
+      const allEventDetails = await Promise.all(eventPromises);
+      
+      const activeEvents = allEventDetails
+        .map((eventDetails, i) => ({
+          id: i,
+          name: eventDetails.eventName,
+          date: new Date(eventDetails.eventDate.toNumber() * 1000),
+          venue: eventDetails.venue,
+          price: ethers.utils.formatEther(eventDetails.ticketPrice),
+          soldTickets: eventDetails.ticketsSold.toNumber(),
+          maxTickets: eventDetails.maxTickets.toNumber(),
+          organizer: eventDetails.organizer,
+          isActive: eventDetails.isActive,
+        }))
+        .filter(event => event.isActive)
+        .slice(0, 3); // Show only the first 3 events
+
+      console.log('Loaded and filtered active events:', activeEvents);
+      setEvents(activeEvents);
+
+    } catch (err) {
+      console.error('Error loading events:', err);
+      setError(err.message || 'Failed to load events. The contract may not be deployed correctly or the RPC is down.');
+      setEvents([]); // Show empty state on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (readOnlyContract) {
+      loadEvents();
+    }
+  }, [readOnlyContract]);
+
+  // Reload events when wallet-connected contract changes (for real-time updates)
+  useEffect(() => {
+    if (contract) {
+      loadEvents();
+    }
+  }, [contract]);
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const isEventSoldOut = (event) => {
+    return event.soldTickets >= event.maxTickets;
+  };
 
   return (
     <div className="homepage">
@@ -63,13 +152,13 @@ const HomePage = () => {
                 className="btn btn-primary btn-lg hero-btn"
                 onClick={() => navigate('/mint')}
               >
-                🚀 Create Event
+                Create Event
               </button>
               <button 
                 className="btn btn-secondary btn-lg hero-btn"
                 onClick={() => navigate('/tickets')}
               >
-                🎟️ View My Tickets
+                View My Tickets
               </button>
             </div>
           </div>
@@ -91,53 +180,105 @@ const HomePage = () => {
       <section className="featured-section">
         <div className="section-container">
           <div className="section-header">
-            <h2 className="section-title">🔥 Featured Events</h2>
+            <h2 className="section-title">Featured Events</h2>
             <p className="section-subtitle">
               Discover amazing events happening near you
             </p>
           </div>
           
-          <div className="events-grid">
-            {featuredEvents.map(event => (
-              <div key={event.id} className="event-card">
-                <div className="event-image">
-                  <span className="event-icon">{event.image}</span>
-                  <div className="event-category">{event.category}</div>
+          {isLoading ? (
+            <div className="events-grid">
+              {[1, 2, 3].map((index) => (
+                <div key={index} className="event-card">
+                  <div className="event-image">
+                    <div className="spinner"></div>
+                  </div>
+                  <div className="event-content">
+                    <div className="skeleton-loader" style={{ height: '24px', marginBottom: '16px' }}></div>
+                    <div className="skeleton-loader" style={{ height: '16px', marginBottom: '8px' }}></div>
+                    <div className="skeleton-loader" style={{ height: '16px', marginBottom: '8px' }}></div>
+                    <div className="skeleton-loader" style={{ height: '16px', marginBottom: '16px' }}></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div className="skeleton-loader" style={{ height: '20px', width: '60px' }}></div>
+                      <div className="skeleton-loader" style={{ height: '36px', width: '100px' }}></div>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="event-content">
-                  <h3 className="event-title">{event.name}</h3>
-                  <div className="event-details">
-                    <div className="event-detail">
-                      <span className="detail-icon">📅</span>
-                      <span>{event.date}</span>
-                    </div>
-                    <div className="event-detail">
-                      <span className="detail-icon">📍</span>
-                      <span>{event.venue}</span>
-                    </div>
-                    <div className="event-detail">
-                      <span className="detail-icon">💎</span>
-                      <span>{event.price} ETH</span>
-                    </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">⚠️</div>
+              <h3 className="empty-state-title">Unable to Load Events</h3>
+              <p className="empty-state-description">
+                {error}
+              </p>
+              <button 
+                className="btn btn-primary"
+                onClick={loadEvents}
+                style={{ marginTop: '20px' }}
+              >
+                Try Again
+              </button>
+            </div>
+          ) : events.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-state-icon">🎫</div>
+              <h3 className="empty-state-title">No Events Available</h3>
+              <p className="empty-state-description">
+                No active events are currently available. Check back later or create your own event!
+              </p>
+              <button 
+                className="btn btn-primary"
+                onClick={() => navigate('/mint')}
+                style={{ marginTop: '20px' }}
+              >
+                Create Event
+              </button>
+            </div>
+          ) : (
+            <div className="events-grid">
+              {events.map(event => (
+                <div key={event.id} className="event-card">
+                  <div className="event-image">
+                    <span className="event-icon">🎫</span>
+                    <div className="event-category">Live Event</div>
                   </div>
                   
-                  <div className="event-footer">
-                    <div className="tickets-left">
-                      <span className="tickets-count">{event.ticketsLeft}</span>
-                      <span className="tickets-label">tickets left</span>
+                  <div className="event-content">
+                    <h3 className="event-title">{event.name}</h3>
+                    <div className="event-details">
+                      <div className="event-detail">
+                        <span className="detail-icon">📅</span>
+                        <span>{formatDate(event.date)}</span>
+                      </div>
+                      <div className="event-detail">
+                        <span className="detail-icon">📍</span>
+                        <span>{event.venue}</span>
+                      </div>
+                      <div className="event-detail">
+                        <span className="detail-icon">💎</span>
+                        <span>{event.price} ETH</span>
+                      </div>
                     </div>
-                    <button 
-                      className="btn btn-primary btn-sm"
-                      onClick={() => navigate('/events')}
-                    >
-                      Buy Ticket
-                    </button>
+                    
+                    <div className="event-footer">
+                      <div className="tickets-left">
+                        <span className="tickets-count">{event.maxTickets - event.soldTickets}</span>
+                        <span className="tickets-label">tickets left</span>
+                      </div>
+                      <button 
+                        className="btn btn-primary btn-sm"
+                        onClick={() => navigate('/events')}
+                      >
+                        {isEventSoldOut(event) ? 'Sold Out' : 'Buy Ticket'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -199,7 +340,7 @@ const HomePage = () => {
               className="btn btn-primary btn-lg cta-button"
               onClick={() => navigate('/mint')}
             >
-              🎫 Create Event Now
+              Create Event Now
             </button>
           </div>
         </div>

@@ -84,7 +84,7 @@ const MintTicket = () => {
       
       await tx.wait();
       
-      setSuccess('Event created successfully! 🎉');
+      setSuccess('Event created successfully!');
       setEventData({
         eventName: '',
         eventDate: getTomorrowDate(),
@@ -111,14 +111,14 @@ const MintTicket = () => {
           <div className="card">
             <div className="card-header">
               <h2 className="card-title">
-                🎫 Create Event
+                Create Event
               </h2>
               <p className="card-description">
                 Create new events with our secure blockchain infrastructure
               </p>
             </div>
             <div className="empty-state">
-              <div className="empty-state-icon">🔗</div>
+              <div className="empty-state-icon">🔌</div>
               <h3 className="empty-state-title">Connect Your Wallet</h3>
               <p className="empty-state-description">
                 Please connect your wallet to create events
@@ -136,7 +136,7 @@ const MintTicket = () => {
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">
-              🎫 Create Event
+              Create Event
             </h2>
             <p className="card-description">
               Create new events with our secure blockchain infrastructure
@@ -257,7 +257,7 @@ const MintTicket = () => {
             className="btn btn-primary btn-lg"
             disabled={isLoading}
           >
-            {isLoading ? <span className="spinner"></span> : '🚀 Create Event'}
+            {isLoading ? <span className="spinner"></span> : 'Create Event'}
           </button>
         </form>
         </div>

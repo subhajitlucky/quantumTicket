@@ -4,28 +4,28 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(0.25rem, 1vw, 0.5rem);
-  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border: none;
   border-radius: var(--radius-lg);
   font-family: inherit;
-  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  overflow: hidden;
   white-space: nowrap;
-  min-height: 44px; /* Minimum touch target */
-  min-width: 44px;
+  min-height: 40px;
+  min-width: 40px;
   text-align: center;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn:focus {
-  outline: 2px solid var(--primary-400);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
@@ -33,148 +33,225 @@
   transform: scale(0.98);
 }
 
+/* Primary Button */
 .btn-primary {
-  background: var(--gradient-button);
-  color: var(--neutral-0);
-  border: 1px solid var(--primary-500);
+  background: var(--brand-primary);
+  color: var(--light-bg);
+  border: 1px solid var(--brand-primary);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--primary-400) 0%, var(--primary-500) 100%);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background: var(--brand-primary-hover);
+  border-color: var(--brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-primary:active {
+  background: var(--brand-primary-active);
+  border-color: var(--brand-primary-active);
   transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-sm);
 }
 
+/* Secondary Button */
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--neutral-100);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--light-elevation-1);
+  color: var(--light-text-secondary);
+  border: 1px solid var(--light-elevation-2);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--dark-surface);
+  color: var(--dark-text-secondary);
+  border: 1px solid var(--dark-elevation-1);
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: var(--neutral-0);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--light-elevation-2);
+  color: var(--light-text-primary);
+  border-color: var(--light-elevation-3);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
+[data-theme="dark"] .btn-secondary:hover {
+  background: var(--dark-elevation-1);
+  color: var(--dark-text-primary);
+  border-color: var(--dark-elevation-2);
+}
+
+.btn-secondary:active {
+  background: var(--light-elevation-3);
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .btn-secondary:active {
+  background: var(--dark-elevation-2);
+}
+
+/* Success Button */
 .btn-success {
-  background: var(--success-500);
-  color: var(--neutral-0);
-  border: 1px solid var(--success-600);
+  background: var(--status-success);
+  color: var(--light-bg);
+  border: 1px solid var(--status-success);
 }
 
 .btn-success:hover {
-  background: var(--success-600);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background: #15803d;
+  border-color: #15803d;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-success:active {
+  background: #166534;
+  border-color: #166534;
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Outline Button */
+.btn-outline {
+  background: transparent;
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary);
+}
+
+.btn-outline:hover {
+  background: rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-outline:active {
+  background: rgba(37, 99, 235, 0.2);
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-sm);
 }
 
 /* Button Sizes */
 .btn-lg {
-  padding: clamp(0.75rem, 3vw, 1rem) clamp(1.5rem, 6vw, 2rem);
-  font-size: clamp(1rem, 3vw, 1.125rem);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--font-size-base);
   min-height: 48px;
 }
 
 .btn-sm {
-  padding: clamp(0.375rem, 1.5vw, 0.5rem) clamp(0.75rem, 3vw, 1rem);
-  font-size: clamp(0.75rem, 2vw, 0.875rem);
-  min-height: 36px;
-  min-width: 36px;
-}
-
-.btn-xs {
-  padding: clamp(0.25rem, 1vw, 0.375rem) clamp(0.5rem, 2vw, 0.75rem);
-  font-size: clamp(0.7rem, 1.8vw, 0.8rem);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
   min-height: 32px;
   min-width: 32px;
 }
 
+.btn-xs {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  min-height: 28px;
+  min-width: 28px;
+}
+
 /* Disabled State */
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
-  box-shadow: none !important;
+  box-shadow: var(--shadow-xs) !important;
   pointer-events: none;
+}
+
+/* Custom disabled state without opacity */
+.btn.btn-disabled {
+  opacity: 1;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: var(--shadow-xs) !important;
+  pointer-events: none;
+  
+}
+
+[data-theme="dark"] .btn.btn-disabled {
+  background: var(--dark-elevation-1);
+  color: var(--dark-text-tertiary);
+  border-color: var(--dark-elevation-2);
 }
 
 /* Connect Button Special Style */
 .connect-button {
-  background: var(--gradient-button);
-  color: var(--neutral-0);
-  border: 1px solid var(--primary-500);
-  padding: clamp(0.5rem, 2vw, 0.75rem) clamp(1rem, 4vw, 1.5rem);
+  background: var(--brand-primary);
+  color: var(--light-bg);
+  border: 1px solid var(--brand-primary);
+  padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-lg);
   font-family: inherit;
-  font-size: clamp(0.875rem, 2.5vw, 1rem);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
-  gap: clamp(0.25rem, 1vw, 0.5rem);
+  gap: var(--space-2);
   text-decoration: none;
   position: relative;
-  overflow: hidden;
-  min-height: 44px;
-  min-width: 44px;
+  min-height: 40px;
+  min-width: 40px;
   white-space: nowrap;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: var(--shadow-sm);
 }
 
 .connect-button:hover {
-  background: linear-gradient(135deg, var(--primary-400) 0%, var(--primary-500) 100%);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  background: var(--brand-primary-hover);
+  border-color: var(--brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .connect-button:active {
+  background: var(--brand-primary-active);
+  border-color: var(--brand-primary-active);
   transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-sm);
 }
 
 .connect-button:focus {
-  outline: 2px solid var(--primary-400);
+  outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
 .connect-button:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none !important;
-  box-shadow: none !important;
+  box-shadow: var(--shadow-xs) !important;
   pointer-events: none;
 }
 
 /* Button Icons */
 .btn-icon {
-  font-size: clamp(0.875rem, 2vw, 1rem);
+  font-size: var(--font-size-base);
   flex-shrink: 0;
 }
 
 .btn-sm .btn-icon {
-  font-size: clamp(0.75rem, 1.8vw, 0.875rem);
+  font-size: var(--font-size-sm);
 }
 
 .btn-lg .btn-icon {
-  font-size: clamp(1rem, 2.5vw, 1.125rem);
+  font-size: var(--font-size-lg);
 }
 
 .btn-xs .btn-icon {
-  font-size: clamp(0.7rem, 1.5vw, 0.8rem);
+  font-size: var(--font-size-xs);
 }
 
 /* Button Groups */
 .btn-group {
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(0.5rem, 2vw, 1rem);
+  gap: var(--space-2);
   align-items: center;
   justify-content: center;
 }
@@ -190,48 +267,30 @@
   justify-content: center;
 }
 
-/* Tablet Responsive */
-@media (max-width: 1024px) {
-  .btn {
-    padding: var(--space-3) var(--space-5);
-    font-size: var(--text-sm);
-  }
-  
-  .btn-lg {
-    padding: var(--space-4) var(--space-6);
-    font-size: var(--text-lg);
-  }
-  
-  .connect-button {
-    padding: var(--space-3) var(--space-5);
-    font-size: var(--text-sm);
-  }
-}
-
-/* Mobile Responsive */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .btn {
-    padding: var(--space-3) var(--space-4);
-    font-size: var(--text-sm);
-    min-height: 48px; /* Larger touch targets on mobile */
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    min-height: 44px;
   }
 
   .btn-lg {
-    padding: var(--space-4) var(--space-5);
-    font-size: var(--text-base);
-    min-height: 52px;
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--font-size-base);
+    min-height: 48px;
   }
 
   .btn-sm {
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--text-xs);
-    min-height: 40px;
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+    min-height: 36px;
   }
 
   .connect-button {
-    padding: var(--space-3) var(--space-4);
-    font-size: var(--text-sm);
-    min-height: 48px;
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    min-height: 44px;
   }
   
   .btn-group {
@@ -245,74 +304,28 @@
   }
 }
 
-/* Small Mobile */
 @media (max-width: 480px) {
   .btn {
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--text-xs);
-    min-height: 44px;
-  }
-
-  .btn-lg {
-    padding: var(--space-3) var(--space-4);
-    font-size: var(--text-sm);
-    min-height: 48px;
-  }
-
-  .btn-sm {
     padding: var(--space-1) var(--space-2);
-    font-size: 0.7rem;
+    font-size: var(--font-size-xs);
     min-height: 36px;
   }
 
-  .connect-button {
-    padding: var(--space-2) var(--space-3);
-    font-size: var(--text-xs);
-  }
-}
-
-/* Very Small Mobile */
-@media (max-width: 360px) {
-  .btn {
-    padding: var(--space-2);
-    font-size: 0.7rem;
-  }
-
   .btn-lg {
-    padding: var(--space-3);
-    font-size: var(--text-xs);
-  }
-
-  .connect-button {
-    padding: var(--space-2);
-    font-size: 0.7rem;
-  }
-}
-
-/* Landscape phone optimization */
-@media (max-height: 500px) and (orientation: landscape) {
-  .btn,
-  .connect-button {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--font-size-sm);
     min-height: 40px;
   }
-  
-  .btn-lg {
-    min-height: 44px;
-  }
-  
+
   .btn-sm {
+    padding: var(--space-1) var(--space-1);
+    font-size: var(--font-size-xs);
     min-height: 32px;
   }
-}
 
-/* High contrast mode */
-@media (prefers-contrast: high) {
-  .btn {
-    border-width: 2px;
-  }
-  
-  .btn:focus {
-    outline-width: 3px;
+  .connect-button {
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
   }
 }
 
