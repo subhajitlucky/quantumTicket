@@ -4,7 +4,16 @@ import App from './App.jsx'
 import './index.css'
 
 import '@rainbow-me/rainbowkit/styles.css';
-import { getDefaultWallets, RainbowKitProvider } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, connectorsForWallets } from '@rainbow-me/rainbowkit';
+import { 
+  injectedWallet, 
+  metaMaskWallet, 
+  walletConnectWallet,
+  coinbaseWallet,
+  rainbowWallet,
+  trustWallet,
+  ledgerWallet
+} from '@rainbow-me/rainbowkit/wallets';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
@@ -14,13 +23,28 @@ const { chains, publicClient } = configureChains(
   [publicProvider()]
 );
 
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'demo';
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID';
 
-const { connectors } = getDefaultWallets({
-  appName: 'QuantumTicket',
-  projectId,
-  chains
-});
+// Configure multiple wallet options
+const connectors = connectorsForWallets([
+  {
+    groupName: 'Popular',
+    wallets: [
+      metaMaskWallet({ projectId, chains }),
+      walletConnectWallet({ projectId, chains }),
+      coinbaseWallet({ appName: 'QuantumTicket', chains }),
+      rainbowWallet({ projectId, chains }),
+    ],
+  },
+  {
+    groupName: 'More',
+    wallets: [
+      trustWallet({ projectId, chains }),
+      ledgerWallet({ projectId, chains }),
+      injectedWallet({ chains }),
+    ],
+  },
+]);
 
 const wagmiConfig = createConfig({
   autoConnect: true,
