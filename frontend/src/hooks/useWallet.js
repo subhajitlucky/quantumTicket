@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAccount, useConnect, useDisconnect, useNetwork } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useChainId } from 'wagmi';
 import { ethers } from 'ethers';
 
 // Wrap wagmi hooks while keeping the same surface used elsewhere in the app.
@@ -7,7 +7,7 @@ export function useWallet() {
   const { address, isConnected } = useAccount();
   const { connectAsync, connectors } = useConnect();
   const { disconnect } = useDisconnect();
-  const { chain } = useNetwork();
+  const chainId = useChainId();
 
   const [error, setError] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -17,9 +17,9 @@ export function useWallet() {
   useEffect(() => {
     // Rebuild ethers instances when connection state changes
     if (isConnected && typeof window !== 'undefined' && window.ethereum) {
-      const ethersProvider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+      const ethersProvider = new ethers.BrowserProvider(window.ethereum, 'any');
       setProvider(ethersProvider);
-      setSigner(ethersProvider.getSigner());
+      ethersProvider.getSigner().then(setSigner).catch(console.error);
     } else {
       setProvider(null);
       setSigner(null);
@@ -29,7 +29,7 @@ export function useWallet() {
   useEffect(() => {
     // Clear errors when wallet context updates
     setError(null);
-  }, [address, chain?.id]);
+  }, [address, chainId]);
 
   const connectWallet = async () => {
     try {
@@ -43,7 +43,7 @@ export function useWallet() {
       const preferred = connectors.find((c) => c.id === 'injected') || connectors[0];
       const result = await connectAsync({ connector: preferred });
 
-      return result.account;
+      return result.accounts[0];
     } catch (err) {
       console.error('Error connecting wallet:', err);
       const message = err?.message || String(err);
@@ -72,7 +72,7 @@ export function useWallet() {
     provider,
     signer,
     account: address || '',
-    chainId: chain?.id || null,
+    chainId: chainId || null,
     isConnected: Boolean(isConnected),
     isConnecting,
     error,
