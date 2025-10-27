@@ -11,8 +11,7 @@ import {
   walletConnectWallet,
   coinbaseWallet,
   rainbowWallet,
-  trustWallet,
-  ledgerWallet
+  trustWallet
 } from '@rainbow-me/rainbowkit/wallets';
 import { configureChains, createConfig, WagmiConfig } from 'wagmi';
 import { sepolia } from 'wagmi/chains';
@@ -25,23 +24,17 @@ const { chains, publicClient } = configureChains(
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID';
 
-// Configure multiple wallet options
+// Configure multiple wallet options with proper error handling
 const connectors = connectorsForWallets([
   {
     groupName: 'Popular',
     wallets: [
+      injectedWallet({ chains }), // Detects MetaMask and other injected wallets
       metaMaskWallet({ projectId, chains }),
       walletConnectWallet({ projectId, chains }),
       coinbaseWallet({ appName: 'QuantumTicket', chains }),
       rainbowWallet({ projectId, chains }),
-    ],
-  },
-  {
-    groupName: 'More',
-    wallets: [
       trustWallet({ projectId, chains }),
-      ledgerWallet({ projectId, chains }),
-      injectedWallet({ chains }),
     ],
   },
 ]);
@@ -55,7 +48,11 @@ const wagmiConfig = createConfig({
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider chains={chains} initialChain={sepolia}>
+      <RainbowKitProvider 
+        chains={chains} 
+        initialChain={sepolia}
+        modalSize="compact"
+      >
         <App />
       </RainbowKitProvider>
     </WagmiConfig>
