@@ -9,13 +9,15 @@ export default defineConfig({
   build: {
     // Use default esbuild minifier (faster and no extra dependencies)
     minify: 'esbuild',
+    // Target modern browsers that support import attributes
+    target: 'esnext',
     // Improve chunking for better caching
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          rainbowkit: ['@rainbow-me/rainbowkit', 'wagmi', 'viem'],
-          query: ['@tanstack/react-query'],
+          ethers: ['ethers'],
+          rainbowkit: ['@rainbow-me/rainbowkit', 'wagmi'],
         },
       },
     },
@@ -30,21 +32,7 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@rainbow-me/rainbowkit', 'wagmi', 'viem', '@tanstack/react-query'],
     esbuildOptions: {
-      // Node.js global to browser globalThis
-      define: {
-        global: 'globalThis'
-      }
-    }
+      target: 'esnext',
+    },
   },
-  // Add resolve configuration for better module resolution
-  resolve: {
-    alias: {
-      // Add any aliases if needed in the future
-    }
-  },
-  // Server configuration for development
-  server: {
-    port: 5173,
-    strictPort: false,
-  }
 })

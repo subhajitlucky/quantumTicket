@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAccount, useConnect, useDisconnect, useChainId } from 'wagmi';
-import { ethers } from 'ethers';
+import { useEthersSigner } from './useEthersSigner';
 
 // Wrap wagmi hooks while keeping the same surface used elsewhere in the app.
 export function useWallet() {
@@ -8,23 +8,10 @@ export function useWallet() {
   const { connectAsync, connectors } = useConnect();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
+  const signer = useEthersSigner({ chainId });
 
   const [error, setError] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [provider, setProvider] = useState(null);
-  const [signer, setSigner] = useState(null);
-
-  useEffect(() => {
-    // Rebuild ethers instances when connection state changes
-    if (isConnected && typeof window !== 'undefined' && window.ethereum) {
-      const ethersProvider = new ethers.BrowserProvider(window.ethereum, 'any');
-      setProvider(ethersProvider);
-      ethersProvider.getSigner().then(setSigner).catch(console.error);
-    } else {
-      setProvider(null);
-      setSigner(null);
-    }
-  }, [isConnected, address]);
 
   useEffect(() => {
     // Clear errors when wallet context updates
@@ -43,7 +30,7 @@ export function useWallet() {
       const preferred = connectors.find((c) => c.id === 'injected') || connectors[0];
       const result = await connectAsync({ connector: preferred });
 
-      return result.accounts[0];
+      return result.account;
     } catch (err) {
       console.error('Error connecting wallet:', err);
       const message = err?.message || String(err);
@@ -69,7 +56,7 @@ export function useWallet() {
   };
 
   return {
-    provider,
+    provider: signer?.provider || null,
     signer,
     account: address || '',
     chainId: chainId || null,
