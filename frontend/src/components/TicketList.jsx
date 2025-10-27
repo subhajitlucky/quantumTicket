@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { useContract } from '../hooks/useContract';
 import { ethers } from 'ethers';
 
 const TicketList = () => {
   const { isConnected, chainId, account } = useWallet();
-  const { contract, isLoading: contractLoading, error: contractError } = useContract();
+  const { contract, error: contractError } = useContract();
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -206,7 +206,7 @@ const TicketList = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [account, chainId, contract, contractError, isConnected]);
   
   // Refresh tickets periodically
   useEffect(() => {
@@ -215,7 +215,7 @@ const TicketList = () => {
       
       // Set up interval to refresh every 30 seconds
       const interval = setInterval(() => {
-    fetchTickets();
+        fetchTickets();
       }, 30000);
       
       return () => clearInterval(interval);
@@ -223,7 +223,7 @@ const TicketList = () => {
       setTickets([]);
       setIsLoading(false);
     }
-  }, [isConnected, chainId, account, contract]);
+  }, [account, contract, fetchTickets, isConnected]);
 
   // Clear tickets immediately when wallet state changes to disconnected
   useEffect(() => {

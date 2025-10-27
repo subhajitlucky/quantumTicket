@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContract } from '../hooks/useContract';
 import { ethers } from 'ethers';
@@ -55,7 +55,7 @@ const HomePage = () => {
   }, []);
 
   // Fetch real events from the blockchain
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     const contractToUse = readOnlyContract || contract;
     if (!contractToUse) {
       // Still show loading state while waiting for contract
@@ -107,20 +107,20 @@ const HomePage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [contract, readOnlyContract]);
 
   useEffect(() => {
     if (readOnlyContract) {
       loadEvents();
     }
-  }, [readOnlyContract]);
+  }, [readOnlyContract, loadEvents]);
 
   // Reload events when wallet-connected contract changes (for real-time updates)
   useEffect(() => {
     if (contract) {
       loadEvents();
     }
-  }, [contract]);
+  }, [contract, loadEvents]);
 
   const formatDate = (date) => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 

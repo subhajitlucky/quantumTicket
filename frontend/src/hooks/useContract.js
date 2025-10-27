@@ -15,7 +15,7 @@ export function useContract() {
   const [error, setError] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   
-  const { provider, signer, account, chainId, isConnected } = useWallet();
+  const { signer, account, chainId, isConnected } = useWallet();
 
   useEffect(() => {
     const initializeContract = async () => {

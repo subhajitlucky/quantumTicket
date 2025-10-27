@@ -12,8 +12,8 @@ const getTomorrowDate = () => {
 };
 
 const MintTicket = () => {
-  const { isConnected, chainId, account } = useWallet();
-  const { contract, isLoading: contractLoading, error: contractError } = useContract();
+  const { isConnected, chainId } = useWallet();
+  const { contract, error: contractError } = useContract();
   
   // Event creation form data
   const [eventData, setEventData] = useState({

@@ -1,146 +1,83 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useAccount, useConnect, useDisconnect, useNetwork } from 'wagmi';
 import { ethers } from 'ethers';
 
-// This hook provides wallet connection functionality using ethers.js
+// Wrap wagmi hooks while keeping the same surface used elsewhere in the app.
 export function useWallet() {
+  const { address, isConnected } = useAccount();
+  const { connectAsync, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { chain } = useNetwork();
+
+  const [error, setError] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
-  const [account, setAccount] = useState('');
-  const [chainId, setChainId] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Check if the wallet is already connected on mount
   useEffect(() => {
-    checkConnection();
-    
-    // Listen for account changes
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-      window.ethereum.on('chainChanged', handleChainChanged);
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-        window.ethereum.removeListener('chainChanged', handleChainChanged);
-      }
-    };
-  }, []);
-
-  // Check if the wallet is already connected
-  const checkConnection = async () => {
-    try {
-      // Check if MetaMask is installed
-      if (!window.ethereum) {
-        console.log("MetaMask not installed");
-        return;
-      }
-
-      // Request account access if not already granted
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      
-      if (accounts.length > 0) {
-        // Get the provider and signer
-        const ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
-        const ethersSigner = ethersProvider.getSigner();
-        const network = await ethersProvider.getNetwork();
-        
-        setProvider(ethersProvider);
-        setSigner(ethersSigner);
-        setAccount(accounts[0]);
-        setChainId(network.chainId);
-        setIsConnected(true);
-      }
-    } catch (err) {
-      console.error("Error checking connection:", err);
-      setError(err.message);
-    }
-  };
-
-  // Handle account changes
-  const handleAccountsChanged = (accounts) => {
-    if (accounts.length === 0) {
-      // User disconnected their wallet
-      disconnectWallet();
+    // Rebuild ethers instances when connection state changes
+    if (isConnected && typeof window !== 'undefined' && window.ethereum) {
+      const ethersProvider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+      setProvider(ethersProvider);
+      setSigner(ethersProvider.getSigner());
     } else {
-      // User switched accounts
-      setAccount(accounts[0]);
+      setProvider(null);
+      setSigner(null);
     }
-  };
+  }, [isConnected, address]);
 
-  // Handle chain changes
-  const handleChainChanged = () => {
-    // Reload the page when the chain changes
-    window.location.reload();
-  };
+  useEffect(() => {
+    // Clear errors when wallet context updates
+    setError(null);
+  }, [address, chain?.id]);
 
-  // Connect wallet
   const connectWallet = async () => {
     try {
       setIsConnecting(true);
       setError(null);
 
-      if (!window.ethereum) {
-        throw new Error("MetaMask not installed");
+      if (!connectors || connectors.length === 0) {
+        throw new Error('No wallet connectors available');
       }
 
-      // Request account access
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      if (accounts.length > 0) {
-        // Get the provider and signer
-        const ethersProvider = new ethers.providers.Web3Provider(window.ethereum);
-        const ethersSigner = ethersProvider.getSigner();
-        const network = await ethersProvider.getNetwork();
-        
-        setProvider(ethersProvider);
-        setSigner(ethersSigner);
-        setAccount(accounts[0]);
-        setChainId(network.chainId);
-        setIsConnected(true);
-      }
+      const preferred = connectors.find((c) => c.id === 'injected') || connectors[0];
+      const result = await connectAsync({ connector: preferred });
+
+      return result.account;
     } catch (err) {
-      console.error("Error connecting wallet:", err);
-      setError(err.message);
+      console.error('Error connecting wallet:', err);
+      const message = err?.message || String(err);
+      setError(message);
+      throw err;
     } finally {
       setIsConnecting(false);
     }
   };
 
-  // Disconnect wallet
-  const disconnectWallet = () => {
-    // Clear local state
-    setProvider(null);
-    setSigner(null);
-    setAccount('');
-    setChainId(null);
-    setIsConnected(false);
-    setError(null);
-    
-    // Optional: You can't actually force disconnect from MetaMask via code
-    // MetaMask doesn't allow dApps to programmatically disconnect
-    // The user must manually disconnect from MetaMask
-    console.log('Wallet disconnected from app. To fully disconnect, please disconnect from MetaMask manually.');
+  const disconnectWallet = async () => {
+    try {
+      await disconnect();
+    } catch (err) {
+      console.error('Error disconnecting wallet:', err);
+      setError(err?.message || String(err));
+    }
   };
 
-  // Format address for display (0x1234...5678)
-  const formatAddress = (address) => {
-    if (!address) return '';
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  const formatAddress = (value) => {
+    if (!value) return '';
+    return `${value.slice(0, 6)}...${value.slice(-4)}`;
   };
 
   return {
     provider,
     signer,
-    account,
-    chainId,
-    isConnected,
+    account: address || '',
+    chainId: chain?.id || null,
+    isConnected: Boolean(isConnected),
     isConnecting,
     error,
     connectWallet,
     disconnectWallet,
     formatAddress
   };
-} 
+}

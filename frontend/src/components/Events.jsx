@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { useContract } from '../hooks/useContract';
 import { ethers } from 'ethers';
@@ -12,8 +12,8 @@ const CONTRACT_ADDRESSES = {
 };
 
 const Events = () => {
-  const { isConnected, chainId, account } = useWallet();
-  const { contract, isLoading: contractLoading, error: contractError } = useContract();
+  const { isConnected, chainId } = useWallet();
+  const { contract, error: contractError } = useContract();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [ticketData, setTicketData] = useState({
@@ -51,7 +51,7 @@ const Events = () => {
     initReadOnlyContract();
   }, []);
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     const contractToUse = readOnlyContract || contract;
     if (!contractToUse) {
       setError("Contract not available. Please connect your wallet or refresh the page.");
@@ -101,20 +101,20 @@ const Events = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [contract, readOnlyContract]);
 
   useEffect(() => {
     if (readOnlyContract) {
       loadEvents();
     }
-  }, [readOnlyContract]);
+  }, [readOnlyContract, loadEvents]);
 
   // Reload events when wallet-connected contract changes (for real-time updates after purchase)
   useEffect(() => {
     if (contract && isConnected) {
       loadEvents();
     }
-  }, [contract, isConnected]);
+  }, [contract, isConnected, loadEvents]);
 
   const handleTicketDataChange = (e) => {
     const { name, value } = e.target;

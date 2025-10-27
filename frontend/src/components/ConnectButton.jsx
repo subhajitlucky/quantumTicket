@@ -1,26 +1,9 @@
 import React from 'react';
-import { useWallet } from '../hooks/useWallet';
-// import '../components.css';
+import { ConnectButton as RKConnectButton } from '@rainbow-me/rainbowkit';
 
+// Thin wrapper so other parts of the app keep importing the same component
 const ConnectButton = () => {
-  const { isConnected, account, connectWallet, disconnectWallet, formatAddress } = useWallet();
-
-  const handleClick = async () => {
-    if (isConnected) {
-      await disconnectWallet();
-    } else {
-      await connectWallet();
-    }
-  };
-
-  return (
-    <button 
-      className="connect-button" 
-      onClick={handleClick}
-    >
-      {isConnected ? `Connected: ${formatAddress(account)}` : 'Connect Wallet'}
-    </button>
-  );
+  return <RKConnectButton />;
 };
 
-export default ConnectButton; 
+export default ConnectButton;
