@@ -3,10 +3,12 @@ import { ethers } from 'ethers';
 import { useWallet } from './useWallet';
 import QuantumTicketABI from '../contracts/QuantumTicket.json';
 
+const SEPOLIA_CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+
 // Contract addresses for different networks
 const CONTRACT_ADDRESSES = {
-  11155111: import.meta.env.VITE_CONTRACT_ADDRESS || '0x3D08c28d26DfDa846283008E9715F07bF4871dF0', // Sepolia
-  80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai
+  11155111: SEPOLIA_CONTRACT_ADDRESS, // Sepolia (required)
+  80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai (placeholder)
 };
 
 export function useContract() {
@@ -32,6 +34,9 @@ export function useContract() {
         // Check if we're on a supported network
         if (!CONTRACT_ADDRESSES[chainId]) {
           throw new Error(`Unsupported network. Please switch to Sepolia or Mumbai testnet.`);
+        }
+        if (chainId === 11155111 && !SEPOLIA_CONTRACT_ADDRESS) {
+          throw new Error('VITE_CONTRACT_ADDRESS (Sepolia) is not set');
         }
 
         const contractAddress = CONTRACT_ADDRESSES[chainId];

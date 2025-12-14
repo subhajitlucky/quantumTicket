@@ -9,7 +9,7 @@ let chainId = null;
 
 // Sepolia chain ID
 const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111 in decimal
-const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://rpc.sepolia.org';
+const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL;
 
 // Event handlers
 const eventHandlers = {
@@ -81,6 +81,10 @@ export const disconnectWallet = () => {
 export const switchToSepoliaNetwork = async () => {
   if (!isMetaMaskInstalled()) {
     throw new Error('MetaMask is not installed');
+  }
+
+  if (!SEPOLIA_RPC_URL) {
+    throw new Error('VITE_SEPOLIA_RPC_URL is not set');
   }
 
   try {

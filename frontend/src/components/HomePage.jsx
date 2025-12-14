@@ -4,13 +4,14 @@ import { useContract } from '../hooks/useContract';
 import { ethers } from 'ethers';
 import QuantumTicketABI from '../contracts/QuantumTicket.json';
 
-// RPC configuration (allows overriding for hosted deployments like Vercel)
-const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://rpc.sepolia.org';
+// RPC configuration (must be provided via env for correct deployment targeting)
+const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL;
+const SEPOLIA_CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 
 // Contract addresses for different networks
 const CONTRACT_ADDRESSES = {
-  11155111: import.meta.env.VITE_CONTRACT_ADDRESS || '0x3D08c28d26DfDa846283008E9715F07bF4871dF0', // Sepolia
-  80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai
+  11155111: SEPOLIA_CONTRACT_ADDRESS, // Sepolia (required)
+  80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai (placeholder)
   1337: 'localhost' // Local development
 };
 
@@ -34,7 +35,14 @@ const HomePage = () => {
   useEffect(() => {
     const initReadOnlyContract = async () => {
       try {
-        // Use configurable RPC (falls back to public if none set)
+        if (!SEPOLIA_RPC_URL) {
+          throw new Error('VITE_SEPOLIA_RPC_URL is not set');
+        }
+        if (!CONTRACT_ADDRESSES[11155111]) {
+          throw new Error('VITE_CONTRACT_ADDRESS (Sepolia) is not set');
+        }
+
+        // Use configurable RPC (env-driven; no public fallback)
         const provider = new ethers.providers.JsonRpcProvider(SEPOLIA_RPC_URL);
         const contractAddress = CONTRACT_ADDRESSES[11155111];
 
