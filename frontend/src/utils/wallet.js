@@ -9,6 +9,7 @@ let chainId = null;
 
 // Sepolia chain ID
 const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111 in decimal
+const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://rpc.sepolia.org';
 
 // Event handlers
 const eventHandlers = {
@@ -100,7 +101,7 @@ export const switchToSepoliaNetwork = async () => {
             symbol: 'ETH',
             decimals: 18
           },
-          rpcUrls: ['https://rpc.sepolia.org'],
+          rpcUrls: [SEPOLIA_RPC_URL],
           blockExplorerUrls: ['https://sepolia.etherscan.io']
         }]
       });

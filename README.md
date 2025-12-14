@@ -71,6 +71,7 @@ ETHERSCAN_API_KEY=your-etherscan-api-key
 **Frontend (.env)**
 ```env
 VITE_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id
+VITE_SEPOLIA_RPC_URL=https://your-sepolia-provider.example
 VITE_CONTRACT_ADDRESS=0x04A1Ae3b9b50050e01380F4dbf6438Dd97D5c3fD
 ```
 

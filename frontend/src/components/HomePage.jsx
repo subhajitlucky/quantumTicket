@@ -4,6 +4,9 @@ import { useContract } from '../hooks/useContract';
 import { ethers } from 'ethers';
 import QuantumTicketABI from '../contracts/QuantumTicket.json';
 
+// RPC configuration (allows overriding for hosted deployments like Vercel)
+const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL || 'https://rpc.sepolia.org';
+
 // Contract addresses for different networks
 const CONTRACT_ADDRESSES = {
   11155111: import.meta.env.VITE_CONTRACT_ADDRESS || '0x3D08c28d26DfDa846283008E9715F07bF4871dF0', // Sepolia
@@ -31,8 +34,8 @@ const HomePage = () => {
   useEffect(() => {
     const initReadOnlyContract = async () => {
       try {
-        // Use a reliable public RPC endpoint directly.
-        const provider = new ethers.providers.JsonRpcProvider('https://sepolia.drpc.org');
+        // Use configurable RPC (falls back to public if none set)
+        const provider = new ethers.providers.JsonRpcProvider(SEPOLIA_RPC_URL);
         const contractAddress = CONTRACT_ADDRESSES[11155111];
 
         const readContract = new ethers.Contract(
