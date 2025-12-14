@@ -7,6 +7,8 @@ import MintTicket from './components/MintTicket'
 import TicketList from './components/TicketList'
 import HomePage from './components/HomePage'
 import Events from './components/Events'
+import OrganizerDashboard from './components/OrganizerDashboard'
+import ScannerTicketView from './components/ScannerTicketView'
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -39,43 +41,57 @@ function Navbar() {
         <Link to="/" className="navbar-logo">
           <span className="logo-text">QuantumTicket</span>
         </Link>
-        
+
         {/* Navigation Links */}
         <nav className={`navbar-nav ${isMenuOpen ? 'open' : ''}`} ref={navRef}>
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className={`nav-link ${isActive('/') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
             Home
           </Link>
-          <Link 
-            to="/mint" 
+          <Link
+            to="/mint"
             className={`nav-link ${isActive('/mint') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
             Create Event
           </Link>
-          <Link 
-            to="/events" 
+          <Link
+            to="/events"
             className={`nav-link ${isActive('/events') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
             Events
           </Link>
-          <Link 
-            to="/tickets" 
+          <Link
+            to="/organizer"
+            className={`nav-link ${isActive('/organizer') ? 'active' : ''}`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Organizer
+          </Link>
+          <Link
+            to="/scanner"
+            className={`nav-link ${isActive('/scanner') ? 'active' : ''}`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Scanner
+          </Link>
+          <Link
+            to="/tickets"
             className={`nav-link ${isActive('/tickets') ? 'active' : ''}`}
             onClick={() => setIsMenuOpen(false)}
           >
             My Tickets
           </Link>
         </nav>
-        
+
         {/* Connect Wallet and Hamburger Menu */}
         <div className="navbar-actions">
           <ConnectButton />
-          <button 
+          <button
             className="hamburger-menu"
             ref={hamburgerRef}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -98,16 +114,18 @@ function App() {
     <Router>
       <div className="app-container">
         <Navbar />
-        
+
         <main className="main-container">
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/mint" element={<MintTicket />} />
             <Route path="/events" element={<Events />} />
             <Route path="/tickets" element={<TicketList />} />
+            <Route path="/organizer" element={<OrganizerDashboard />} />
+            <Route path="/scanner" element={<ScannerTicketView />} />
           </Routes>
         </main>
-        
+
         <footer className="footer">
           <div className="footer-content">
             <p>© 2024 QuantumTicket - Revolutionizing Event Ticketing with Blockchain Technology</p>

@@ -3,236 +3,275 @@
 # ⚡ QuantumTicket ⚡
 ## *The Future of Event Ticketing*
 
-*Revolutionary quantum-powered decentralized platform with cyberpunk aesthetics - Where anyone can create and mint secure NFT event tickets*
+*Revolutionary blockchain-based NFT event ticketing platform - Secure, transparent, and fraud-proof ticketing for the modern world*
 
-[![Project Progress](https://img.shields.io/badge/Progress-88%25-brightgreen?style=for-the-badge&logo=ethereum&logoColor=white)](https://github.com/subhajitlucky/quantumTicket)
+[![Project Progress](https://img.shields.io/badge/Progress-95%25-brightgreen?style=for-the-badge&logo=ethereum&logoColor=white)](https://github.com/subhajitlucky/quantumTicket)
 [![Smart Contract](https://img.shields.io/badge/Contract-Production%20Ready-success?style=for-the-badge&logo=solidity&logoColor=white)](https://sepolia.etherscan.io/)
 [![Frontend](https://img.shields.io/badge/Frontend-Feature%20Complete-blue?style=for-the-badge&logo=react&logoColor=white)](https://github.com/subhajitlucky/quantumTicket)
-[![Tests](https://img.shields.io/badge/Tests-Comprehensive-brightgreen?style=for-the-badge&logo=ethereum&logoColor=white)](https://github.com/subhajitlucky/quantumTicket)
-
-![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
-![Repo Size](https://img.shields.io/badge/size-11MB-orange?style=flat-square)
-![Code Files](https://img.shields.io/badge/files-44%20code-blue?style=flat-square)
-![Last Commit](https://img.shields.io/github/last-commit/subhajitlucky/quantumTicket?style=flat-square)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 
 </div>
 
-## 🚀 **Project Status**
+## 🚀 **Project Overview**
 
-```
-🎯 Core Features    ████████████████████████████████████████ 100%
-🏗️  Smart Contract  ████████████████████████████████████████ 100%
-🌐 Frontend         ████████████████████████████████████████ 100%
-🧪 Testing         ████████████████████████████████████████ 100%
-🚢 Deployment       █████████████████████████████████████████ 95%
-📱 UX/UI           ████████████████████████████████████████  95%
-🔧 Integration      ████████████████████████████████████████ 100%
-```
+QuantumTicket is a decentralized event ticketing platform built on Ethereum that transforms event tickets into unique NFT tokens. The platform empowers event organizers to create, manage, and monetize events while providing attendees with true ownership of their tickets through blockchain technology.
+
+### **Key Highlights**
+- 🎫 **NFT-Based Tickets** - Each ticket is a unique ERC-721 token
+- 🔒 **Anti-Scalping Protection** - Transfer locks and purchase limits
+- 💰 **Organizer Revenue** - Direct withdrawal of ticket sales
+- 🔍 **Scanner System** - Authorized ticket validation at venues
+- ⏰ **Time-Based Entry** - Configurable entry open times
+- 💸 **Refund Mechanism** - Organizer-controlled ticket refunds
+- 🌐 **Multi-Wallet Support** - MetaMask, WalletConnect, and more
 
 ## ⚡ **Quick Start**
 
-### 📋 **Requirements**
+### 📋 **Prerequisites**
 - Node.js `v18+`
-- MetaMask Wallet
-- Sepolia ETH for testing
+- npm or yarn
+- MetaMask or compatible Web3 wallet
+- Sepolia ETH for testing (get from [faucet](https://sepoliafaucet.com/))
 
 ### 🛠️ **Installation**
+
 ```bash
 # Clone repository
 git clone https://github.com/subhajitlucky/quantumTicket.git
 cd quantumTicket
 
-# Setup blockchain
-cd blockchain && npm install
+# Setup blockchain (Smart Contracts)
+cd blockchain
+npm install
 
-# Setup frontend  
-cd ../frontend && npm install
+# Create .env file with your configuration
+cp .env.example .env
+# Edit .env with your PRIVATE_KEY, SEPOLIA_RPC_URL, ETHERSCAN_API_KEY
 
-# Start development
+# Setup frontend
+cd ../frontend
+npm install
+
+# Create .env file for frontend
+# Add VITE_WALLETCONNECT_PROJECT_ID and VITE_CONTRACT_ADDRESS
+
+# Start development server
 npm run dev
+```
+
+### 🔧 **Environment Variables**
+
+**Blockchain (.env)**
+```env
+PRIVATE_KEY=your-private-key-here
+SEPOLIA_RPC_URL=https://sepolia.drpc.org
+ETHERSCAN_API_KEY=your-etherscan-api-key
+```
+
+**Frontend (.env)**
+```env
+VITE_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id
+VITE_CONTRACT_ADDRESS=0x04A1Ae3b9b50050e01380F4dbf6438Dd97D5c3fD
 ```
 
 ## 🏗️ **Architecture**
 
-<div align="center">
+### **Smart Contract: QuantumTicket.sol**
 
-| Component | Technology | Status | Coverage | LOC |
-|-----------|------------|--------|----------|-----|
-| **Smart Contract** | Solidity 0.8.20 | ✅ Complete | 100% | `217` |
-| **Frontend Core** | React + Vite | ✅ Complete | 95% | `661` |
-| **Wallet Integration** | Ethers.js v5 | ✅ Complete | 100% | `157` |
-| **Testing Suite** | Hardhat + Chai | ✅ Complete | 100% | `298` |
-| **UI Components** | Custom CSS | ✅ Complete | 90% | `6 components` |
-| **Deployment** | Hardhat Scripts | ✅ Ready | 85% | `3 scripts` |
+Built on Solidity 0.8.20 with OpenZeppelin security standards:
 
-</div>
+- **ERC-721 NFT Standard** - Full NFT implementation with URI storage
+- **Event Management** - Create, deactivate, and manage events
+- **Ticket Purchase** - Buy tickets with platform fee (0.0001 ETH)
+- **Anti-Scalping** - Max 5 tickets per wallet per event
+- **Transfer Locks** - Tickets cannot be transferred before event date
+- **Scanner Authorization** - Event organizers can authorize scanners
+- **Entry Time Control** - Configurable entry open times (default: 2 hours before event)
+- **Pull Payment Pattern** - Organizers withdraw accumulated funds
+- **Refund System** - Organizers can refund tickets (deducted from balance)
+- **Emergency Controls** - Pause functionality for contract owner
 
-## 📊 **Project Analytics**
+### **Frontend Architecture**
 
-<div align="center">
+**Tech Stack:**
+- **React 18** - Modern UI framework
+- **Vite** - Fast build tool and dev server
+- **Wagmi v2** - React hooks for Ethereum
+- **RainbowKit** - Beautiful wallet connection UI
+- **Ethers.js v5** - Ethereum library
+- **React Router** - Client-side routing
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| **Total Code Files** | `44 files` | ✅ |
-| **Smart Contract Size** | `217 lines` | ✅ |
-| **Frontend Components** | `6 components` | ✅ |
-| **Test Coverage** | `298 test lines` | ✅ |
-| **Project Size** | `11MB` | ✅ |
-| **Production Ready** | `✅ Complete` | ✅ |
-| **Gas Efficiency** | `~2.1M gas` | ✅ |
-| **Security Level** | `OpenZeppelin` | 🔒 |
+**Key Components:**
+- `HomePage` - Landing page with featured events
+- `Events` - Browse and purchase tickets
+- `MintTicket` - Create new events (organizers)
+- `TicketList` - View and manage owned tickets
+- `OrganizerDashboard` - Manage events, scanners, funds, refunds
+- `ScannerTicketView` - Validate tickets at venue entry
+- `ConnectButton` - Wallet connection UI
 
-</div>
+## 🎯 **Core Features**
 
-## 🎯 **Features**
+### ✅ **Event Management**
+- Create events with customizable details (name, date, venue, price, max tickets)
+- Set entry open time (when scanning/validation begins)
+- Deactivate events to stop ticket sales
+- View event statistics (tickets sold, revenue)
 
-### ✅ **Production Complete**
-- 🎫 **NFT Ticket Minting** - Complete with QuantumTicket.sol (217 LOC)
-- 🔐 **Secure Ownership** - OpenZeppelin ERC721 implementation  
-- 📱 **Wallet Integration** - Full MetaMask & Web3 support (157 LOC)
-- 🎪 **Event Management** - Comprehensive Events.jsx (396 LOC)
-- ✨ **Ticket Validation** - Advanced TicketList.jsx (661 LOC)
-- 🏠 **Landing Page** - Modern HomePage.jsx (209 LOC)
-- 🎨 **Create Events** - User-friendly MintTicket.jsx (261 LOC)
-- 🧪 **Full Test Suite** - 298 lines of comprehensive tests
-- 📱 **Responsive Design** - Mobile-first architecture complete
-- 🎯 **Multi-ticket Support** - Buy multiple tickets per event
-- 🔒 **Security Audited** - OpenZeppelin standards implemented
+### ✅ **Ticket System**
+- **Purchase Tickets** - Buy tickets for active events
+- **NFT Ownership** - Each ticket is a unique NFT token
+- **Purchase Limits** - Maximum 5 tickets per wallet per event (anti-scalping)
+- **Transfer Restrictions** - Tickets locked until after event date
+- **Ticket Validation** - Mark tickets as used at venue entry
+- **Entry Time Control** - Validation only allowed after entry open time
 
-### 🎯 **Core Features Delivered**
-- ✅ **Anyone Can Create Events** - Decentralized event creation
-- ✅ **NFT Ticket Ownership** - True ownership via blockchain
-- ✅ **Ticket Usage System** - Time-based validation
-- ✅ **Platform Fee System** - Sustainable revenue model
-- ✅ **Event Deactivation** - Organizer controls
-- ✅ **Responsive UI** - Works on all devices
+### ✅ **Organizer Features**
+- **Fund Withdrawal** - Withdraw accumulated ticket sales
+- **Scanner Management** - Add/remove authorized scanners per event
+- **Refund System** - Refund tickets (burns NFT, returns payment)
+- **Event Analytics** - View tickets sold and revenue per event
+- **Balance Management** - Keep funds for refunds or withdraw
 
-### 🚀 **Future Enhancements**
-- 🎵 **IPFS Integration** - Decentralized metadata storage
-- 💳 **Payment Gateway** - Fiat to crypto conversion
-- 📈 **Analytics Dashboard** - Event performance metrics
-- 🌍 **Multi-chain Support** - Polygon, Arbitrum expansion
+### ✅ **Scanner Features**
+- **Ticket Lookup** - Enter token ID to view ticket details
+- **Validation** - Mark tickets as used (only if authorized and entry time passed)
+- **Status Check** - See if ticket is valid, used, or entry not yet open
+- **Authorization Check** - Verify scanner status for event
 
-## 🛠️ **Tech Stack**
-
-<div align="center">
-
-### **Blockchain**
-![Solidity](https://img.shields.io/badge/Solidity-363636?style=for-the-badge&logo=solidity&logoColor=white)
-![Ethereum](https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=Ethereum&logoColor=white)
-![Hardhat](https://img.shields.io/badge/Hardhat-FFF04D?style=for-the-badge&logo=hardhat&logoColor=black)
-
-### **Frontend**
-![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Ethers.js](https://img.shields.io/badge/Ethers.js-2535A0?style=for-the-badge&logo=ethereum&logoColor=white)
-
-</div>
+### ✅ **Security Features**
+- **OpenZeppelin Standards** - Battle-tested security patterns
+- **Reentrancy Protection** - NonReentrant modifiers
+- **Access Control** - Role-based permissions (owner, organizer, scanner)
+- **Transfer Locks** - Prevent scalping before events
+- **Purchase Limits** - Anti-scalping per-wallet limits
+- **Emergency Pause** - Contract owner can pause operations
 
 ## 📁 **Project Structure**
+
 ```
 quantumTicket/
-├── 🔗 blockchain/             # Smart contracts & deployment
-│   ├── contracts/             
-│   │   └── EventTicket.sol    # Core NFT contract (217 lines)
-│   ├── test/                  
-│   │   └── EventTicket.test.js # Comprehensive tests (298 lines)
-│   ├── scripts/               # Deployment automation (3 scripts)
-│   └── package.json           # Hardhat + OpenZeppelin
+├── blockchain/                    # Smart contracts & deployment
+│   ├── contracts/
+│   │   └── QuantumTicket.sol     # Main NFT contract (407 lines)
+│   ├── scripts/
+│   │   ├── deploy.js             # Deployment script
+│   │   └── mintTestTicket.js     # Test ticket minting
+│   ├── test/                     # Contract tests
+│   ├── hardhat.config.js         # Hardhat configuration
+│   └── package.json
 │
-└── 🌐 frontend/              # React application
-    ├── src/components/        # UI components (6 total)
-    │   ├── TicketList.jsx     # Ticket management (661 lines)
-    │   ├── Events.jsx         # Event creation (396 lines)
-    │   ├── MintTicket.jsx     # Minting interface (261 lines)
-    │   ├── HomePage.jsx       # Landing page (209 lines)
-    │   ├── WalletConnect.jsx  # Web3 integration (157 lines)
-    │   └── ConnectButton.jsx  # Wallet button (26 lines)
-    ├── src/hooks/             # Custom React hooks
-    ├── src/contracts/         # Contract ABIs
-    └── package.json           # React + Ethers.js
+└── frontend/                      # React application
+    ├── src/
+    │   ├── components/           # React components
+    │   │   ├── HomePage.jsx
+    │   │   ├── Events.jsx
+    │   │   ├── MintTicket.jsx
+    │   │   ├── TicketList.jsx
+    │   │   ├── OrganizerDashboard.jsx
+    │   │   ├── ScannerTicketView.jsx
+    │   │   ├── ConnectButton.jsx
+    │   │   └── WalletConnect.jsx
+    │   ├── hooks/                # Custom React hooks
+    │   │   ├── useWallet.js
+    │   │   ├── useContract.js
+    │   │   └── useEthersSigner.js
+    │   ├── services/              # Business logic
+    │   │   └── ticketIndexer.js   # Client-side ticket indexing
+    │   ├── contracts/            # Contract ABIs
+    │   ├── wallet/               # Wallet configuration
+    │   └── styles/               # CSS styling
+    ├── public/
+    │   └── quantumticket-logo.svg # Favicon
+    └── package.json
 ```
 
-## 🎯 **Core Components**
+## 🧪 **Testing**
 
-### **EventTicket.sol** - Smart Contract (217 lines)
-- 📝 ERC721 standard with OpenZeppelin security
-- 🔒 Time-based event validation system
-- ⏰ Automated ticket usage tracking
-- 🎫 Fraud-proof ownership verification
-
-### **Frontend Architecture** (6 components, 1710+ lines)
-- 🔌 **WalletConnect.jsx** - Web3 wallet management (157 LOC)
-- 🎫 **TicketList.jsx** - Advanced ticket dashboard (661 LOC)
-- 🎪 **Events.jsx** - Event creation & management (396 LOC)
-- 🎨 **MintTicket.jsx** - User-friendly minting (261 LOC)
-- 🏠 **HomePage.jsx** - Modern landing page (209 LOC)
-- 🔘 **ConnectButton.jsx** - Wallet connection UI (26 LOC)
-
-## 🧪 **Testing & Quality**
-
-<div align="center">
-
-| Test Category | Lines | Coverage | Status |
-|---------------|-------|----------|--------|
-| **Unit Tests** | `298` | `100%` | ✅ |
-| **Integration** | `Included` | `95%` | ✅ |
-| **Contract Security** | `OpenZeppelin` | `100%` | ✅ |
-| **Gas Estimation** | `~2.1M` | `Optimized` | ✅ |
-
-</div>
-
+### **Smart Contract Tests**
 ```bash
-cd blockchain && npm test  # Run comprehensive test suite
+cd blockchain
+npm test
 ```
 
-## 🚀 **Deployment Status**
+### **Frontend Linting**
+```bash
+cd frontend
+npm run lint
+```
 
-### **Development Environment**
-- ✅ **Local Testing** - Hardhat network ready
-- ✅ **Contract Compilation** - Solidity 0.8.20
-- ✅ **Frontend Build** - Vite production ready
+### **Build Production**
+```bash
+cd frontend
+npm run build
+```
 
-### **Testnet (Sepolia)**
-- ✅ **Contract Ready** - Deployment scripts prepared
-- ✅ **Frontend Connected** - Web3 integration complete
-- ✅ **Wallet Integration** - MetaMask fully supported
+## 🚀 **Deployment**
 
-### **Production Pipeline**
-- ✅ **GitHub Ready** - All security checks passed
-- ✅ **Mainnet Ready** - Production optimizations complete
-- 🔄 **Domain Setup** - DNS configuration pending
+### **Smart Contract Deployment**
 
-## 📊 **Development Metrics**
+1. **Deploy to Sepolia Testnet:**
+```bash
+cd blockchain
+npx hardhat run scripts/deploy.js --network sepolia
+```
 
-<div align="center">
+2. **Update Frontend:**
+   - Add deployed contract address to `frontend/.env`
+   - Set `VITE_CONTRACT_ADDRESS=0x...`
 
-![Code Files](https://img.shields.io/badge/Code%20Files-44-blue?style=flat-square)
-![Smart Contracts](https://img.shields.io/badge/Smart%20Contracts-1-green?style=flat-square)  
-![React Components](https://img.shields.io/badge/React%20Components-6-purple?style=flat-square)
-![Test Lines](https://img.shields.io/badge/Test%20Lines-298-orange?style=flat-square)
-![Project Size](https://img.shields.io/badge/Project%20Size-11MB-red?style=flat-square)
-![Active Changes](https://img.shields.io/badge/Active%20Changes-31-yellow?style=flat-square)
+### **Frontend Deployment**
 
-</div>
+The frontend is configured for Vercel deployment with:
+- SPA routing support (`_redirects` file)
+- Environment variable configuration
+- Production build optimization
+
+## 🔐 **Security Considerations**
+
+- ✅ **Private Keys** - Never commit `.env` files (already in `.gitignore`)
+- ✅ **Environment Variables** - All secrets use environment variables
+- ✅ **Contract Addresses** - Public addresses are safe to commit
+- ✅ **OpenZeppelin** - Using audited security patterns
+- ⚠️ **Refund Security** - Organizers must keep balance for refunds
+- ⚠️ **Scanner Authorization** - Only authorized scanners can validate tickets
+
+## 📊 **Smart Contract Details**
+
+**Contract:** `QuantumTicket.sol`
+- **Standard:** ERC-721 (NFT)
+- **Network:** Ethereum Sepolia Testnet
+- **Platform Fee:** 0.0001 ETH (fixed)
+- **Max Tickets per Wallet:** 5 per event
+- **Transfer Lock:** Until after event date
+
+**Key Functions:**
+- `createEvent()` - Create new events
+- `buyTicket()` - Purchase tickets
+- `useTicket()` - Validate/use tickets
+- `setScanner()` - Authorize scanners
+- `withdrawOrganizerFunds()` - Withdraw sales
+- `refundTicket()` - Refund tickets
+- `deactivateEvent()` - Stop ticket sales
+
+## 🎨 **UI/UX Features**
+
+- **Responsive Design** - Works on mobile, tablet, and desktop
+- **Dark/Light Theme** - Theme support (ready for implementation)
+- **Success/Error Messages** - Clear user feedback
+- **Loading States** - Spinner indicators during transactions
+- **Transaction Links** - View transactions on Etherscan
+- **Ticket Display** - Beautiful ticket cards with all details
+- **Event Grid** - Browse events in responsive grid layout
+- **Hamburger Menu** - Mobile-friendly navigation
 
 ## 🤝 **Contributing**
 
-1. **Fork** the repository
-2. **Create** feature branch (`git checkout -b feature/AmazingFeature`)
-3. **Commit** changes (`git commit -m 'Add AmazingFeature'`)
-4. **Push** to branch (`git push origin feature/AmazingFeature`)
-5. **Open** Pull Request
-
-## 📊 **Repository Info**
-
-<div align="center">
-
-![GitHub language count](https://img.shields.io/github/languages/count/subhajitlucky/quantumTicket?style=flat-square)
-![GitHub top language](https://img.shields.io/github/languages/top/subhajitlucky/quantumTicket?style=flat-square)
-![GitHub code size](https://img.shields.io/github/languages/code-size/subhajitlucky/quantumTicket?style=flat-square)
-
-</div>
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 **License**
 
@@ -244,9 +283,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Built with ❤️ by [Subhajit](https://github.com/subhajitlucky)**
 
-[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/subhajitlucky)
-
 *🚀 Building the future of event ticketing, one block at a time*
 
+[![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/subhajitlucky)
 
-</div> 
+</div>

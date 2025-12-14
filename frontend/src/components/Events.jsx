@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { useContract } from '../hooks/useContract';
 import { ethers } from 'ethers';
 import QuantumTicketABI from '../contracts/QuantumTicket.json';
+import { invalidateTicketCache } from '../services/ticketIndexer';
 
 // Contract addresses for different networks
 const CONTRACT_ADDRESSES = {
@@ -11,8 +12,10 @@ const CONTRACT_ADDRESSES = {
   1337: 'localhost' // Local development
 };
 
+const MAX_PER_WALLET = 5; // Matches contract constant
+
 const Events = () => {
-  const { isConnected, chainId } = useWallet();
+  const { isConnected, chainId, account } = useWallet();
   const { contract, error: contractError } = useContract();
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -23,12 +26,34 @@ const Events = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [readOnlyContract, setReadOnlyContract] = useState(null);
+  const [userTicketCounts, setUserTicketCounts] = useState({}); // Track purchases per event
+  const successTimeoutRef = useRef(null);
+  const lastSeenTxRef = useRef(null);
+
+  // Centralized success helper so we never miss surfacing a confirmation
+  const showSuccess = useCallback((message) => {
+    setSuccess(message);
+    setError(null);
+
+    if (successTimeoutRef.current) {
+      clearTimeout(successTimeoutRef.current);
+    }
+    successTimeoutRef.current = setTimeout(() => setSuccess(null), 5000);
+  }, []);
+
+  // Clean up pending timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Initialize read-only contract for fetching events without wallet
   useEffect(() => {
     const initReadOnlyContract = async () => {
       try {
-        // Use a reliable public RPC endpoint directly.
         const provider = new ethers.providers.JsonRpcProvider('https://sepolia.drpc.org');
         const contractAddress = CONTRACT_ADDRESSES[11155111];
 
@@ -38,7 +63,6 @@ const Events = () => {
           provider
         );
 
-        // Test connection by fetching total events, which should not revert even if 0.
         await readContract.getTotalEvents();
         setReadOnlyContract(readContract);
         console.log('Read-only contract initialized successfully.');
@@ -51,20 +75,42 @@ const Events = () => {
     initReadOnlyContract();
   }, []);
 
+  // Fetch user's ticket counts per event (for purchase limit display)
+  const fetchUserTicketCounts = useCallback(async () => {
+    if (!contract || !account || !events.length) return;
+
+    try {
+      const counts = {};
+      for (const event of events) {
+        const count = await contract.ticketsBought(event.id, account);
+        counts[event.id] = count.toNumber();
+      }
+      setUserTicketCounts(counts);
+    } catch (err) {
+      console.warn('Error fetching ticket counts:', err);
+    }
+  }, [contract, account, events]);
+
+  useEffect(() => {
+    if (isConnected && contract && events.length > 0) {
+      fetchUserTicketCounts();
+    }
+  }, [isConnected, contract, events, fetchUserTicketCounts]);
+
   const loadEvents = useCallback(async () => {
     const contractToUse = readOnlyContract || contract;
     if (!contractToUse) {
       setError("Contract not available. Please connect your wallet or refresh the page.");
       return;
     }
-    
+
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const totalEvents = await contractToUse.getTotalEvents();
       console.log('Total events found:', totalEvents.toString());
-      
+
       if (totalEvents.isZero()) {
         setEvents([]);
         setIsLoading(false);
@@ -75,16 +121,20 @@ const Events = () => {
       for (let i = 0; i < totalEvents; i++) {
         eventPromises.push(contractToUse.getEventDetails(i));
       }
-      
+
       const allEventDetails = await Promise.all(eventPromises);
-      
+
       const activeEvents = allEventDetails
         .map((eventDetails, i) => ({
           id: i,
           name: eventDetails.eventName,
           date: new Date(eventDetails.eventDate.toNumber() * 1000),
+          entryOpenTime: eventDetails.entryOpenTime?.toNumber()
+            ? new Date(eventDetails.entryOpenTime.toNumber() * 1000)
+            : null,
           venue: eventDetails.venue,
           price: ethers.utils.formatEther(eventDetails.ticketPrice),
+          priceWei: eventDetails.ticketPrice,
           soldTickets: eventDetails.ticketsSold.toNumber(),
           maxTickets: eventDetails.maxTickets.toNumber(),
           organizer: eventDetails.organizer,
@@ -109,7 +159,6 @@ const Events = () => {
     }
   }, [readOnlyContract, loadEvents]);
 
-  // Reload events when wallet-connected contract changes (for real-time updates after purchase)
   useEffect(() => {
     if (contract && isConnected) {
       loadEvents();
@@ -140,6 +189,13 @@ const Events = () => {
       return;
     }
 
+    // Check purchase limit
+    const currentCount = userTicketCounts[eventId] || 0;
+    if (currentCount >= MAX_PER_WALLET) {
+      setError(`You've reached the maximum of ${MAX_PER_WALLET} tickets for this event`);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
@@ -156,27 +212,67 @@ const Events = () => {
       );
 
       await tx.wait();
+      lastSeenTxRef.current = tx.hash;
 
-      setSuccess('Ticket purchased successfully!');
+      // Invalidate ticket cache so My Tickets updates immediately
+      if (account && chainId) {
+        invalidateTicketCache(account, chainId);
+      }
+
+      showSuccess('Ticket purchased successfully! View it in "My Tickets"');
       setSelectedEvent(null);
       setTicketData({
         tokenURI: 'ipfs://your-ticket-metadata-uri-here'
       });
 
-      setTimeout(() => setSuccess(null), 5000);
-      loadEvents(); // Refresh events
+      // Refresh events and ticket counts
+      loadEvents();
+      fetchUserTicketCounts();
     } catch (err) {
       console.error('Error buying ticket:', err);
-      setError(err.message || 'Failed to buy ticket');
+
+      // Parse common errors
+      if (err.message.includes('Purchase limit reached')) {
+        setError(`Maximum ${MAX_PER_WALLET} tickets per wallet reached for this event`);
+      } else if (err.message.includes('Event is sold out')) {
+        setError('This event is sold out');
+      } else {
+        setError(err.message || 'Failed to buy ticket');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Listen for TicketMinted events so success is shown even if the UI misses the callback
+  useEffect(() => {
+    if (!contract || !account) return;
+
+    const onTicketMinted = (to, tokenId, eventId, event) => {
+      if (!to || to.toLowerCase() !== account.toLowerCase()) return;
+
+      // Avoid duplicating the message for the transaction we just initiated
+      if (lastSeenTxRef.current && event?.transactionHash === lastSeenTxRef.current) {
+        return;
+      }
+
+      showSuccess(`Ticket minted successfully! Token #${tokenId.toString()} is ready in "My Tickets".`);
+
+      if (account && chainId) {
+        invalidateTicketCache(account, chainId);
+      }
+    };
+
+    contract.on('TicketMinted', onTicketMinted);
+    return () => {
+      contract.off('TicketMinted', onTicketMinted);
+    };
+  }, [account, chainId, contract, showSuccess]);
+
   const formatDate = (date) => {
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -188,15 +284,20 @@ const Events = () => {
     return new Date() >= event.date;
   };
 
+  const getRemainingPurchases = (eventId) => {
+    const current = userTicketCounts[eventId] || 0;
+    return MAX_PER_WALLET - current;
+  };
+
   return (
     <div className="events-page">
       <div className="page-container">
-        <div className="section-header" style={{marginBottom: 'var(--space-6)'}}>
+        <div className="section-header" style={{ marginBottom: 'var(--space-6)' }}>
           <h2 className="section-title">
             Browse Events
           </h2>
           <p className="section-subtitle">
-            Discover and purchase tickets for amazing events happening near you
+            Discover and purchase tickets for amazing events
             {!isConnected && (
               <span style={{ display: 'block', color: 'var(--warning-500)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)' }}>
                 Connect your wallet to purchase tickets
@@ -234,63 +335,83 @@ const Events = () => {
           </div>
         ) : (
           <div className="events-grid">
-            {events.map(event => (
-              <div key={event.id} className="event-card">
-                <div className="event-image">
-                  <span className="event-icon">🎫</span>
-                  <div className="event-category">Live Event</div>
-                </div>
-                
-                <div className="event-content">
-                  <h3 className="event-title">{event.name}</h3>
-                  <div className="event-details">
-                    <div className="event-detail">
-                      <span className="detail-icon">📅</span>
-                      <span>{formatDate(event.date)}</span>
-                    </div>
-                    <div className="event-detail">
-                      <span className="detail-icon">📍</span>
-                      <span>{event.venue}</span>
-                    </div>
-                    <div className="event-detail">
-                      <span className="detail-icon">💎</span>
-                      <span>{event.price} ETH + 0.0001 ETH fee</span>
-                    </div>
-                    <div className="event-detail">
-                      <span className="detail-icon">👤</span>
-                      <span>By: {event.organizer.slice(0, 8)}...</span>
-                    </div>
+            {events.map(event => {
+              const remaining = getRemainingPurchases(event.id);
+
+              return (
+                <div key={event.id} className="event-card">
+                  <div className="event-image">
+                    <span className="event-icon">🎫</span>
+                    <div className="event-category">Live Event</div>
                   </div>
-                  
-                  <div className="event-footer">
-                    <div className="tickets-left">
-                      <span className="tickets-count">{event.maxTickets - event.soldTickets}</span>
-                      <span className="tickets-label">tickets left</span>
+
+                  <div className="event-content">
+                    <h3 className="event-title">{event.name}</h3>
+                    <div className="event-details">
+                      <div className="event-detail">
+                        <span className="detail-icon">📅</span>
+                        <span>{formatDate(event.date)}</span>
+                      </div>
+                      <div className="event-detail">
+                        <span className="detail-icon">📍</span>
+                        <span>{event.venue}</span>
+                      </div>
+                      <div className="event-detail">
+                        <span className="detail-icon">💎</span>
+                        <span>{event.price} ETH + 0.0001 ETH fee</span>
+                      </div>
+                      <div className="event-detail">
+                        <span className="detail-icon">👤</span>
+                        <span>By: {event.organizer.slice(0, 8)}...</span>
+                      </div>
                     </div>
-                    
-                    {isEventStarted(event) ? (
-                      <span className="status-badge status-warning">Event Started</span>
-                    ) : isEventSoldOut(event) ? (
-                      <span className="status-badge status-used">Sold Out</span>
-                    ) : !isConnected ? (
-                      <button 
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setError('Please connect your wallet to purchase tickets')}
-                      >
-                        Connect Wallet
-                      </button>
-                    ) : (
-                      <button 
-                        className="btn btn-primary btn-sm"
-                        onClick={() => setSelectedEvent(event)}
-                      >
-                        Buy Ticket
-                      </button>
+
+                    <div className="event-footer">
+                      <div className="tickets-left">
+                        <span className="tickets-count">{event.maxTickets - event.soldTickets}</span>
+                        <span className="tickets-label">tickets left</span>
+                      </div>
+
+                      {isEventStarted(event) ? (
+                        <span className="status-badge status-warning">Event Started</span>
+                      ) : isEventSoldOut(event) ? (
+                        <span className="status-badge status-used">Sold Out</span>
+                      ) : !isConnected ? (
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => setError('Please connect your wallet to purchase tickets')}
+                        >
+                          Connect Wallet
+                        </button>
+                      ) : remaining <= 0 ? (
+                        <span className="status-badge status-used">Limit Reached</span>
+                      ) : (
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => setSelectedEvent(event)}
+                        >
+                          Buy Ticket
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Purchase limit info */}
+                    {isConnected && !isEventSoldOut(event) && !isEventStarted(event) && (
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-secondary)',
+                        marginTop: 'var(--space-2)',
+                        textAlign: 'right'
+                      }}>
+                        {remaining > 0
+                          ? `You can buy ${remaining} more`
+                          : 'Purchase limit reached'}
+                      </div>
                     )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
@@ -308,15 +429,15 @@ const Events = () => {
             justifyContent: 'center',
             zIndex: 1000
           }}>
-            <div className="card" style={{ 
-              width: '90%', 
-              maxWidth: '500px', 
+            <div className="card" style={{
+              width: '90%',
+              maxWidth: '500px',
               margin: 0,
               position: 'relative'
             }}>
               <div className="card-header">
                 <h3 className="card-title">Purchase Ticket</h3>
-                <button 
+                <button
                   onClick={() => setSelectedEvent(null)}
                   style={{
                     position: 'absolute',
@@ -334,10 +455,19 @@ const Events = () => {
               </div>
 
               <div className="alert alert-info">
-                <strong>Event: {selectedEvent.name}</strong><br/>
-                {formatDate(selectedEvent.date)}<br/>
-                {selectedEvent.venue}<br/>
+                <strong>Event: {selectedEvent.name}</strong><br />
+                {formatDate(selectedEvent.date)}<br />
+                {selectedEvent.venue}<br />
                 {selectedEvent.price} ETH + 0.0001 ETH platform fee
+              </div>
+
+              {/* Anti-scalping notice */}
+              <div style={{
+                fontSize: '0.875rem',
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-4)'
+              }}>
+                📋 Max {MAX_PER_WALLET} tickets per wallet • Tickets locked until after event
               </div>
 
               <form onSubmit={(e) => {
@@ -360,7 +490,7 @@ const Events = () => {
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setSelectedEvent(null)}
                     className="btn btn-secondary"
@@ -368,7 +498,7 @@ const Events = () => {
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     type="submit"
                     className="btn btn-success"
                     disabled={isLoading || !isConnected}
@@ -386,4 +516,4 @@ const Events = () => {
   );
 };
 
-export default Events; 
+export default Events;
