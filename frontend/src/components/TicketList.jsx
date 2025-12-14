@@ -77,10 +77,10 @@ const TicketList = () => {
     if (isConnected && contract && account) {
       fetchTickets();
 
-      // Set up interval to refresh every 60 seconds (less aggressive)
+      // Set up interval to refresh every 2 minutes to reduce RPC load
       const interval = setInterval(() => {
         fetchTickets();
-      }, 60000);
+      }, 120000);
 
       return () => clearInterval(interval);
     } else {

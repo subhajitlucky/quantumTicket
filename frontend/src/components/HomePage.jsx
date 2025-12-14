@@ -1,19 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContract } from '../hooks/useContract';
-import { ethers } from 'ethers';
-import QuantumTicketABI from '../contracts/QuantumTicket.json';
-
-// RPC configuration (must be provided via env for correct deployment targeting)
-const SEPOLIA_RPC_URL = import.meta.env.VITE_SEPOLIA_RPC_URL;
-const SEPOLIA_CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
-
-// Contract addresses for different networks
-const CONTRACT_ADDRESSES = {
-  11155111: SEPOLIA_CONTRACT_ADDRESS, // Sepolia (required)
-  80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai (placeholder)
-  1337: 'localhost' // Local development
-};
+import { fetchActiveEvents, getReadOnlyContract, invalidateEventsCache } from '../services/readOnlyProvider';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -31,31 +19,12 @@ const HomePage = () => {
     { number: "99.9%", label: "Uptime", icon: "⚡" }
   ];
 
-  // Initialize read-only contract for fetching events without wallet
+  // Initialize read-only contract once
   useEffect(() => {
     const initReadOnlyContract = async () => {
       try {
-        if (!SEPOLIA_RPC_URL) {
-          throw new Error('VITE_SEPOLIA_RPC_URL is not set');
-        }
-        if (!CONTRACT_ADDRESSES[11155111]) {
-          throw new Error('VITE_CONTRACT_ADDRESS (Sepolia) is not set');
-        }
-
-        // Use configurable RPC (env-driven; no public fallback)
-        const provider = new ethers.providers.JsonRpcProvider(SEPOLIA_RPC_URL);
-        const contractAddress = CONTRACT_ADDRESSES[11155111];
-
-        const readContract = new ethers.Contract(
-          contractAddress,
-          QuantumTicketABI.abi,
-          provider
-        );
-
-        // Test connection by fetching total events, which should not revert even if 0.
-        await readContract.getTotalEvents();
-        setReadOnlyContract(readContract);
-        console.log('Read-only contract initialized successfully.');
+        const { contract: roContract } = getReadOnlyContract();
+        setReadOnlyContract(roContract);
       } catch (err) {
         console.error('Error initializing read-only contract:', err);
         setError('Unable to connect to the blockchain. Please check your connection and refresh.');
@@ -65,51 +34,15 @@ const HomePage = () => {
     initReadOnlyContract();
   }, []);
 
-  // Fetch real events from the blockchain
+  // Fetch events with caching (shared across pages)
   const loadEvents = useCallback(async () => {
-    const contractToUse = readOnlyContract || contract;
-    if (!contractToUse) {
-      // Still show loading state while waiting for contract
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError(null);
 
-      const totalEvents = await contractToUse.getTotalEvents();
-      console.log('Total events found:', totalEvents.toString());
-      
-      if (totalEvents.isZero()) {
-        setEvents([]);
-        setIsLoading(false);
-        return;
-      }
-
-      const eventPromises = [];
-      for (let i = 0; i < totalEvents; i++) {
-        eventPromises.push(contractToUse.getEventDetails(i));
-      }
-      
-      const allEventDetails = await Promise.all(eventPromises);
-      
-      const activeEvents = allEventDetails
-        .map((eventDetails, i) => ({
-          id: i,
-          name: eventDetails.eventName,
-          date: new Date(eventDetails.eventDate.toNumber() * 1000),
-          venue: eventDetails.venue,
-          price: ethers.utils.formatEther(eventDetails.ticketPrice),
-          soldTickets: eventDetails.ticketsSold.toNumber(),
-          maxTickets: eventDetails.maxTickets.toNumber(),
-          organizer: eventDetails.organizer,
-          isActive: eventDetails.isActive,
-        }))
-        .filter(event => event.isActive)
-        .slice(0, 3); // Show only the first 3 events
-
-      console.log('Loaded and filtered active events:', activeEvents);
-      setEvents(activeEvents);
+      const { events: activeEvents } = await fetchActiveEvents();
+      // Home page shows only the first 3 active events
+      setEvents(activeEvents.slice(0, 3));
 
     } catch (err) {
       console.error('Error loading events:', err);
@@ -118,7 +51,7 @@ const HomePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [contract, readOnlyContract]);
+  }, []);
 
   useEffect(() => {
     if (readOnlyContract) {
@@ -126,9 +59,10 @@ const HomePage = () => {
     }
   }, [readOnlyContract, loadEvents]);
 
-  // Reload events when wallet-connected contract changes (for real-time updates)
+  // When wallet contract changes, invalidate cache and refresh (avoids stale data)
   useEffect(() => {
     if (contract) {
+      invalidateEventsCache();
       loadEvents();
     }
   }, [contract, loadEvents]);
