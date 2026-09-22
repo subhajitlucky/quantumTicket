@@ -49,6 +49,9 @@ jobs:
           npm run build
 
   build-and-deploy:
+    # Pages publishing is opt-in: set repository variable ENABLE_GH_PAGES=true to enable it.
+    # The verify job still runs tests, lint, and build on every push.
+    if: vars.ENABLE_GH_PAGES == 'true'
     needs: verify
     runs-on: ubuntu-latest
     
