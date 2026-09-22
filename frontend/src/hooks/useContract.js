@@ -8,7 +8,6 @@ const SEPOLIA_CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
 // Contract addresses for different networks
 const CONTRACT_ADDRESSES = {
   11155111: SEPOLIA_CONTRACT_ADDRESS, // Sepolia (required)
-  80001: import.meta.env.VITE_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000',   // Mumbai (placeholder)
 };
 
 export function useContract() {
@@ -33,7 +32,7 @@ export function useContract() {
 
         // Check if we're on a supported network
         if (!CONTRACT_ADDRESSES[chainId]) {
-          throw new Error(`Unsupported network. Please switch to Sepolia or Mumbai testnet.`);
+          throw new Error(`Unsupported network. Please switch to Sepolia.`);
         }
         if (chainId === 11155111 && !SEPOLIA_CONTRACT_ADDRESS) {
           throw new Error('VITE_CONTRACT_ADDRESS (Sepolia) is not set');
@@ -83,48 +82,11 @@ export function useContract() {
     }
   };
 
-  // Function to mint a ticket
-  const mintNewTicket = async (eventName, eventDate, venue, price, uri) => {
-    if (!contract) {
-      throw new Error('Contract not initialized');
-    }
-
-    if (!isOwner) {
-      throw new Error('Only the contract owner can mint tickets');
-    }
-
-    try {
-      // Validate the timestamp is in the future
-      const now = Math.floor(Date.now() / 1000);
-      if (eventDate <= now) {
-        throw new Error('Event date must be in the future');
-      }
-
-      // Call the mintTicket function with the account address as the recipient
-      const tx = await contract.mintTicket(
-        account,
-        eventName,
-        eventDate,
-        venue,
-        price,
-        uri
-      );
-
-      // Wait for the transaction to be mined
-      await tx.wait();
-      return tx;
-    } catch (err) {
-      console.error('Error minting ticket:', err);
-      throw new Error(err.message || 'Failed to mint ticket');
-    }
-  };
-
   return {
     contract,
     isLoading,
     error,
     isOwner,
-    testContractDeployment,
-    mintNewTicket
+    testContractDeployment
   };
 } 

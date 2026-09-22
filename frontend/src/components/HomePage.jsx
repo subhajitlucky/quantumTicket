@@ -10,13 +10,13 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [readOnlyContract, setReadOnlyContract] = useState(null);
+  const [stats, setStats] = useState({ events: null, tickets: null, active: null });
 
-  // Platform statistics - these could be fetched from a backend or contract in the future
   const platformStats = [
-    { number: "10,000+", label: "Events Created", icon: "🎫" },
-    { number: "50,000+", label: "Tickets Sold", icon: "🎟️" },
-    { number: "5,000+", label: "Happy Users", icon: "😊" },
-    { number: "99.9%", label: "Uptime", icon: "⚡" }
+    { number: stats.events ?? '—', label: "Events Created", icon: "🎫" },
+    { number: stats.tickets ?? '—', label: "Tickets Minted", icon: "🎟️" },
+    { number: stats.active ?? '—', label: "Active Events", icon: "📅" },
+    { number: "Sepolia", label: "Testnet", icon: "⚡" }
   ];
 
   // Initialize read-only contract once
@@ -43,7 +43,23 @@ const HomePage = () => {
       const { events: activeEvents } = await fetchActiveEvents();
       // Home page shows only the first 3 active events
       setEvents(activeEvents.slice(0, 3));
+      setStats((previous) => ({ ...previous, active: activeEvents.length }));
 
+      if (readOnlyContract) {
+        try {
+          const [totalEvents, totalTickets] = await Promise.all([
+            readOnlyContract.getTotalEvents(),
+            readOnlyContract.getTotalTickets()
+          ]);
+          setStats({
+            events: totalEvents.toNumber(),
+            tickets: totalTickets.toNumber(),
+            active: activeEvents.length
+          });
+        } catch (statsError) {
+          console.error('Error loading platform stats:', statsError);
+        }
+      }
     } catch (err) {
       console.error('Error loading events:', err);
       setError(err.message || 'Failed to load events. The contract may not be deployed correctly or the RPC is down.');
@@ -51,7 +67,7 @@ const HomePage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [readOnlyContract]);
 
   useEffect(() => {
     if (readOnlyContract) {
@@ -78,6 +94,10 @@ const HomePage = () => {
     return event.soldTickets >= event.maxTickets;
   };
 
+  const isEventStarted = (event) => {
+    return new Date(event.date).getTime() <= Date.now();
+  };
+
   return (
     <div className="homepage">
       {/* Hero Section */}
@@ -89,7 +109,7 @@ const HomePage = () => {
             </h1>
             <p className="hero-subtitle">
               Create, mint, and manage NFT-based event tickets on the blockchain. 
-              Secure, transparent, and fraud-proof ticketing for the modern world.
+              Secure, transparent ticketing with on-chain ownership.
             </p>
             
             <div className="hero-buttons">
@@ -187,7 +207,9 @@ const HomePage = () => {
                 <div key={event.id} className="event-card">
                   <div className="event-image">
                     <span className="event-icon">🎫</span>
-                    <div className="event-category">Live Event</div>
+                    <div className="event-category">
+                      {isEventSoldOut(event) ? 'Sold Out' : isEventStarted(event) ? 'Started' : 'Upcoming'}
+                    </div>
                   </div>
                   
                   <div className="event-content">
@@ -212,12 +234,18 @@ const HomePage = () => {
                         <span className="tickets-count">{event.maxTickets - event.soldTickets}</span>
                         <span className="tickets-label">tickets left</span>
                       </div>
-                      <button 
-                        className="btn btn-primary btn-sm"
-                        onClick={() => navigate('/events')}
-                      >
-                        {isEventSoldOut(event) ? 'Sold Out' : 'Buy Ticket'}
-                      </button>
+                      {isEventStarted(event) ? (
+                        <span className="status-badge status-warning">Event Started</span>
+                      ) : isEventSoldOut(event) ? (
+                        <span className="status-badge status-used">Sold Out</span>
+                      ) : (
+                        <button 
+                          className="btn btn-primary btn-sm"
+                          onClick={() => navigate('/events')}
+                        >
+                          Buy Ticket
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -240,9 +268,9 @@ const HomePage = () => {
           <div className="features-grid">
             <div className="feature-card">
               <div className="feature-icon">🔒</div>
-              <h3 className="feature-title">100% Secure</h3>
+              <h3 className="feature-title">On-chain Tickets</h3>
               <p className="feature-description">
-                Blockchain-based tickets prevent fraud and unauthorized resale
+                Ownership and validation are enforced by smart contracts, not a central database
               </p>
             </div>
             
@@ -264,9 +292,9 @@ const HomePage = () => {
             
             <div className="feature-card">
               <div className="feature-icon">🌍</div>
-              <h3 className="feature-title">Global Access</h3>
+              <h3 className="feature-title">Wallet-native Access</h3>
               <p className="feature-description">
-                Buy and sell tickets anywhere in the world, 24/7
+                Tickets live in your wallet, so there is no app account to lose
               </p>
             </div>
           </div>
@@ -279,7 +307,7 @@ const HomePage = () => {
           <div className="cta-content">
             <h2 className="cta-title">Ready to Create Your Event?</h2>
             <p className="cta-subtitle">
-              Join thousands of event organizers using QuantumTicket
+              Launch your next event on the Sepolia testnet in a few minutes
             </p>
             <button 
               className="btn btn-primary btn-lg cta-button"

@@ -10,6 +10,10 @@ import Events from './components/Events'
 import OrganizerDashboard from './components/OrganizerDashboard'
 import ScannerTicketView from './components/ScannerTicketView'
 
+// Vite sets BASE_URL to the deployed base path (e.g. /quantumTicket/ on GitHub Pages)
+const routerBase =
+  import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL.replace(/\/$/, '')
+
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const navRef = useRef(null)
@@ -111,7 +115,7 @@ function Navbar() {
 
 function App() {
   return (
-    <Router>
+    <Router basename={routerBase}>
       <div className="app-container">
         <Navbar />
 
@@ -128,7 +132,16 @@ function App() {
 
         <footer className="footer">
           <div className="footer-content">
-            <p>© 2024 QuantumTicket - Revolutionizing Event Ticketing with Blockchain Technology</p>
+            <p>
+              © {new Date().getFullYear()} QuantumTicket · NFT ticketing on the Sepolia testnet ·{' '}
+              <a
+                href="https://github.com/subhajitlucky/quantumTicket"
+                target="_blank"
+                rel="noreferrer"
+              >
+                source on GitHub
+              </a>
+            </p>
           </div>
         </footer>
       </div>

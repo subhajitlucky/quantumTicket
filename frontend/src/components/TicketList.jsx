@@ -418,7 +418,7 @@ const TicketList = () => {
                         {ticket.isUsed ? (
                           <div className="ticket-used-notice" style={{
                             padding: '12px',
-                            background: 'var(--success-500/10)',
+                            background: 'color-mix(in srgb, var(--status-success) 10%, transparent)',
                             borderRadius: '8px',
                             textAlign: 'center',
                             color: 'var(--success-500)'
@@ -444,7 +444,7 @@ const TicketList = () => {
                         ) : (
                           <div className="ticket-waiting-notice" style={{
                             padding: '12px',
-                            background: 'var(--warning-500/10)',
+                            background: 'color-mix(in srgb, var(--status-warning) 10%, transparent)',
                             borderRadius: '8px',
                             textAlign: 'center',
                             color: 'var(--text-secondary)',

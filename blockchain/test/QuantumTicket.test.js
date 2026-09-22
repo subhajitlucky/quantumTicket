@@ -356,13 +356,17 @@ describe("QuantumTicket", function () {
       eventId = 0;
     });
 
-    it("Should allow organizer to withdraw accumulated funds", async function () {
+    it("Should allow organizer to withdraw accumulated funds after the event", async function () {
       // Buy multiple tickets
       await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
       await quantumTicket.connect(buyer2).buyTicket(eventId, "ipfs://ticket2", { value: totalRequired });
 
       const expectedBalance = ticketPrice * 2n;
       expect(await quantumTicket.organizerBalances(organizer.address)).to.equal(expectedBalance);
+
+      // Funds unlock once the event date has passed
+      await ethers.provider.send("evm_increaseTime", [86401]);
+      await ethers.provider.send("evm_mine");
 
       const organizerBalanceBefore = await ethers.provider.getBalance(organizer.address);
 
@@ -381,8 +385,26 @@ describe("QuantumTicket", function () {
       expect(await quantumTicket.organizerBalances(organizer.address)).to.equal(0);
     });
 
+    it("Should keep ticket sales escrowed until the event date", async function () {
+      await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
+
+      expect(await quantumTicket.getWithdrawableOrganizerFunds(organizer.address)).to.equal(0);
+
+      await expect(
+        quantumTicket.connect(organizer).withdrawOrganizerFunds()
+      ).to.be.revertedWith("Nothing to withdraw");
+
+      await ethers.provider.send("evm_increaseTime", [86401]);
+      await ethers.provider.send("evm_mine");
+
+      expect(await quantumTicket.getWithdrawableOrganizerFunds(organizer.address)).to.equal(ticketPrice);
+    });
+
     it("Should emit OrganizerWithdrawal event", async function () {
       await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
+
+      await ethers.provider.send("evm_increaseTime", [86401]);
+      await ethers.provider.send("evm_mine");
 
       await expect(quantumTicket.connect(organizer).withdrawOrganizerFunds())
         .to.emit(quantumTicket, "OrganizerWithdrawal")
@@ -455,6 +477,141 @@ describe("QuantumTicket", function () {
       const eventAfter = await quantumTicket.getEventDetails(eventId);
       expect(eventAfter.ticketsSold).to.equal(0);
     });
+
+    it("Should keep refunds funded even after a failed pre-event withdrawal attempt", async function () {
+      // Organizer cannot pull escrow before the event
+      await expect(
+        quantumTicket.connect(organizer).withdrawOrganizerFunds()
+      ).to.be.revertedWith("Nothing to withdraw");
+
+      const buyerBalanceBefore = await ethers.provider.getBalance(buyer1.address);
+
+      await quantumTicket.connect(organizer).refundTicket(tokenId);
+
+      const buyerBalanceAfter = await ethers.provider.getBalance(buyer1.address);
+      expect(buyerBalanceAfter - buyerBalanceBefore).to.equal(ticketPrice);
+    });
+
+    it("Should not allow refunds after the event date", async function () {
+      await ethers.provider.send("evm_increaseTime", [86401]);
+      await ethers.provider.send("evm_mine");
+
+      await expect(
+        quantumTicket.connect(organizer).refundTicket(tokenId)
+      ).to.be.revertedWith("Refunds closed after event");
+    });
+  });
+
+  describe("Validation Window", function () {
+    let eventId;
+    let tokenId;
+    let ticketPrice;
+    let totalRequired;
+
+    beforeEach(async function () {
+      ticketPrice = ethers.parseEther("0.1");
+      totalRequired = ticketPrice + platformFee;
+      await quantumTicket.connect(organizer).createEvent(
+        "Test Event", eventDate, 0, "Test Venue", ticketPrice, 100, "ipfs://test"
+      );
+      eventId = 0;
+
+      await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
+      tokenId = 0;
+    });
+
+    it("Should reject validation after the window closes", async function () {
+      // Move past entry time and past the validation window
+      await ethers.provider.send("evm_increaseTime", [86400 + 86400 + 1]);
+      await ethers.provider.send("evm_mine");
+
+      await expect(
+        quantumTicket.connect(buyer1).useTicket(tokenId)
+      ).to.be.revertedWith("Validation window closed");
+    });
+  });
+
+  describe("Escrow and Fee Safety", function () {
+    let eventId;
+    let ticketPrice;
+    let totalRequired;
+
+    beforeEach(async function () {
+      ticketPrice = ethers.parseEther("0.1");
+      totalRequired = ticketPrice + platformFee;
+      await quantumTicket.connect(organizer).createEvent(
+        "Test Event", eventDate, 0, "Test Venue", ticketPrice, 100, "ipfs://test"
+      );
+      eventId = 0;
+    });
+
+    it("Should track platform fees separately from organizer escrow", async function () {
+      await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
+      await quantumTicket.connect(buyer2).buyTicket(eventId, "ipfs://ticket2", { value: totalRequired });
+
+      expect(await quantumTicket.platformFeeBalance()).to.equal(platformFee * 2n);
+      expect(await quantumTicket.eventEscrow(eventId)).to.equal(ticketPrice * 2n);
+    });
+
+    it("Should only let the owner withdraw platform fees, never organizer escrow", async function () {
+      await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
+
+      const ownerBalanceBefore = await ethers.provider.getBalance(owner.address);
+
+      const tx = await quantumTicket.connect(owner).withdrawPlatformFees();
+      const receipt = await tx.wait();
+      const gasUsed = receipt.gasUsed * receipt.gasPrice;
+
+      const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
+
+      expect(ownerBalanceAfter).to.be.closeTo(
+        ownerBalanceBefore + platformFee - gasUsed,
+        ethers.parseEther("0.001")
+      );
+
+      // Organizer escrow remains intact and withdrawable after the event
+      const contractBalance = await ethers.provider.getBalance(quantumTicket.target);
+      expect(contractBalance).to.equal(ticketPrice);
+
+      await ethers.provider.send("evm_increaseTime", [86401]);
+      await ethers.provider.send("evm_mine");
+
+      await expect(quantumTicket.connect(organizer).withdrawOrganizerFunds())
+        .to.emit(quantumTicket, "OrganizerWithdrawal")
+        .withArgs(organizer.address, ticketPrice);
+    });
+
+    it("Should emit PlatformWithdrawal event", async function () {
+      await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
+
+      await expect(quantumTicket.connect(owner).withdrawPlatformFees())
+        .to.emit(quantumTicket, "PlatformWithdrawal")
+        .withArgs(owner.address, platformFee);
+    });
+
+    it("Should not allow withdrawing platform fees twice for the same purchase", async function () {
+      await quantumTicket.connect(buyer1).buyTicket(eventId, "ipfs://ticket1", { value: totalRequired });
+
+      await quantumTicket.connect(owner).withdrawPlatformFees();
+
+      await expect(
+        quantumTicket.connect(owner).withdrawPlatformFees()
+      ).to.be.revertedWith("No platform fees to withdraw");
+    });
+  });
+
+  describe("Event Creation Guards", function () {
+    it("Should revert with a clear message when an event starts in under 2 hours", async function () {
+      const blockNum = await ethers.provider.getBlockNumber();
+      const block = await ethers.provider.getBlock(blockNum);
+      const soon = block.timestamp + 3600; // 1 hour from now
+
+      await expect(
+        quantumTicket.connect(organizer).createEvent(
+          "Short Notice", soon, 0, "Venue", ethers.parseEther("0.1"), 100, "uri"
+        )
+      ).to.be.revertedWith("Event must start at least 2 hours from now");
+    });
   });
 
   describe("Pause Functionality", function () {
@@ -518,7 +675,9 @@ describe("QuantumTicket", function () {
 
       await quantumTicket.connect(buyer1).buyTicket(0, "ipfs://ticket1", { value: totalRequired });
 
-      // Organizer withdraws their funds first
+      // Organizer funds unlock after the event, then they withdraw
+      await ethers.provider.send("evm_increaseTime", [86401]);
+      await ethers.provider.send("evm_mine");
       await quantumTicket.connect(organizer).withdrawOrganizerFunds();
 
       const contractBalance = await ethers.provider.getBalance(quantumTicket.target);

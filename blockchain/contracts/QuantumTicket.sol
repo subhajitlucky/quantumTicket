@@ -29,6 +29,9 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
     // Anti-scalping: max tickets per wallet per event
     uint256 public constant MAX_PER_WALLET = 5;
 
+    // Ticket validation stays open this long after the event start time
+    uint256 public constant VALIDATION_WINDOW = 24 hours;
+
     struct Event {
         uint256 eventId;
         string eventName;
@@ -54,6 +57,14 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
     // Pull payment: organizer balances (Issue #1)
     mapping(address => uint256) public organizerBalances;
     
+    // Per-event escrow: ticket sales stay locked until the event date,
+    // so pre-event refunds are always funded.
+    mapping(uint256 => uint256) public eventEscrow;
+    mapping(address => uint256[]) private _organizerEventIds;
+    
+    // Platform fees are tracked separately from organizer escrow
+    uint256 public platformFeeBalance;
+    
     // Scanner role per event (Issue #2)
     mapping(uint256 => mapping(address => bool)) public scanners;
     
@@ -67,6 +78,7 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
     event RefundIssued(address indexed to, uint256 amount);
     event ScannerUpdated(uint256 indexed eventId, address indexed scanner, bool allowed);
     event OrganizerWithdrawal(address indexed organizer, uint256 amount);
+    event PlatformWithdrawal(address indexed owner, uint256 amount);
 
     constructor() ERC721("QuantumTicket", "QTKT") Ownable(msg.sender) {
         // Simplified quantum ticketing platform
@@ -122,6 +134,10 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
         // Default entry time: 2 hours before event
         uint256 finalEntryTime = entryOpenTime;
         if (entryOpenTime == 0 || entryOpenTime >= eventDate) {
+            require(
+                eventDate >= block.timestamp + 2 hours,
+                "Event must start at least 2 hours from now"
+            );
             finalEntryTime = eventDate - 2 hours;
         }
         require(finalEntryTime > block.timestamp, "Entry time must be in the future");
@@ -141,6 +157,7 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
             isActive: true,
             metadataURI: metadataURI
         });
+        _organizerEventIds[msg.sender].push(eventId);
         
         emit EventCreated(eventId, eventName, msg.sender, ticketPrice);
         return eventId;
@@ -201,9 +218,14 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
             emit RefundIssued(msg.sender, excess);
         }
         
-        // Pull payment: accumulate balance for later withdrawal (Issue #1)
+        // Pull payment: accumulate balance for later withdrawal (Issue #1).
+        // Funds stay escrowed per event until the event date passes, so
+        // pre-event refunds are always funded.
         organizerBalances[eventData.organizer] += eventData.ticketPrice;
-        // Platform fee stays in contract for owner withdrawal
+        eventEscrow[eventId] += eventData.ticketPrice;
+        // Platform fee is tracked separately so the owner can never withdraw
+        // organizer escrow.
+        platformFeeBalance += PLATFORM_FEE;
         
         // Update anti-scalping counter
         ticketsBought[eventId][msg.sender]++;
@@ -251,6 +273,10 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
         
         // Use entryOpenTime instead of eventDate (Issue #10)
         require(block.timestamp >= eventData.entryOpenTime, "Entry not yet open");
+        require(
+            block.timestamp <= eventData.eventDate + VALIDATION_WINDOW,
+            "Validation window closed"
+        );
         
         ticket.isUsed = true;
         emit TicketUsed(tokenId, ticket.eventId);
@@ -259,32 +285,62 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
     // ============ Organizer Withdrawal (Issue #1) ============
 
     /**
-     * @dev Organizer withdraws accumulated ticket sales
+     * @dev Total organizer funds that can be withdrawn right now.
+     * Ticket sales unlock per event once the event date has passed.
+     */
+    function getWithdrawableOrganizerFunds(address organizer) public view returns (uint256 total) {
+        uint256[] storage eventIds = _organizerEventIds[organizer];
+        for (uint256 i = 0; i < eventIds.length; i++) {
+            uint256 eventId = eventIds[i];
+            if (events[eventId].eventDate < block.timestamp) {
+                total += eventEscrow[eventId];
+            }
+        }
+    }
+
+    /**
+     * @dev Organizer withdraws ticket sales from events that have already started.
+     * Pre-event funds stay escrowed so refunds cannot be drained.
      */
     function withdrawOrganizerFunds() external nonReentrant {
-        uint256 amount = organizerBalances[msg.sender];
-        require(amount > 0, "Nothing to withdraw");
+        uint256 total;
+        uint256[] storage eventIds = _organizerEventIds[msg.sender];
+
+        for (uint256 i = 0; i < eventIds.length; i++) {
+            uint256 eventId = eventIds[i];
+            if (events[eventId].eventDate < block.timestamp && eventEscrow[eventId] > 0) {
+                total += eventEscrow[eventId];
+                eventEscrow[eventId] = 0;
+            }
+        }
+
+        require(total > 0, "Nothing to withdraw");
         
-        organizerBalances[msg.sender] = 0;
+        organizerBalances[msg.sender] -= total;
         
-        (bool ok,) = msg.sender.call{value: amount}("");
+        (bool ok,) = msg.sender.call{value: total}("");
         require(ok, "Withdraw failed");
         
-        emit OrganizerWithdrawal(msg.sender, amount);
+        emit OrganizerWithdrawal(msg.sender, total);
     }
     
     // ============ Platform Fee Withdrawal (Issue #8) ============
 
     /**
-     * @dev Platform owner withdraws platform fees
+     * @dev Platform owner withdraws only the accumulated platform fees.
+     * Organizer escrow is never touched.
      */
     function withdrawPlatformFees() public onlyOwner nonReentrant {
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No platform fees to withdraw");
+        uint256 amount = platformFeeBalance;
+        require(amount > 0, "No platform fees to withdraw");
+        
+        platformFeeBalance = 0;
         
         // Safe withdrawal using call (Issue #8)
-        (bool ok,) = owner().call{value: balance}("");
+        (bool ok,) = owner().call{value: amount}("");
         require(ok, "Platform withdrawal failed");
+        
+        emit PlatformWithdrawal(owner(), amount);
     }
 
     // ============ Refund Mechanism (Issue #7) ============
@@ -305,12 +361,15 @@ contract QuantumTicket is ERC721URIStorage, Ownable, ReentrancyGuard, Pausable {
         
         require(eventData.organizer == msg.sender, "Not event organizer");
         require(!ticket.isUsed, "Ticket already used");
+        require(block.timestamp < eventData.eventDate, "Refunds closed after event");
         
         address ticketOwner = ownerOf(tokenId);
         uint256 price = eventData.ticketPrice;
         
-        // Deduct from organizer balance (they haven't withdrawn yet)
-        require(organizerBalances[msg.sender] >= price, "Insufficient balance for refund");
+        // Refunds are paid from this event's escrow, which cannot be
+        // withdrawn until the event date passes.
+        require(eventEscrow[eventId] >= price, "Refund escrow unavailable");
+        eventEscrow[eventId] -= price;
         organizerBalances[msg.sender] -= price;
         
         // Decrease tickets sold counter

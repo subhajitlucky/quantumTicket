@@ -3,12 +3,13 @@
 # ⚡ QuantumTicket ⚡
 ## *The Future of Event Ticketing*
 
-*Revolutionary blockchain-based NFT event ticketing platform - Secure, transparent, and fraud-proof ticketing for the modern world*
+*Blockchain-based NFT event ticketing on the Ethereum Sepolia testnet — on-chain ownership, wallet-based entry validation, and organizer escrow*
 
-[![Project Progress](https://img.shields.io/badge/Progress-95%25-brightgreen?style=for-the-badge&logo=ethereum&logoColor=white)](https://github.com/subhajitlucky/quantumTicket)
-[![Smart Contract](https://img.shields.io/badge/Contract-Production%20Ready-success?style=for-the-badge&logo=solidity&logoColor=white)](https://sepolia.etherscan.io/)
-[![Frontend](https://img.shields.io/badge/Frontend-Feature%20Complete-blue?style=for-the-badge&logo=react&logoColor=white)](https://github.com/subhajitlucky/quantumTicket)
+[![Network](https://img.shields.io/badge/Network-Sepolia-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white)](https://sepolia.etherscan.io/address/0x5C844C7Aa8e49A7dA32C3B65f69bB545b5216d2f)
+[![Contract](https://img.shields.io/badge/Contract-ERC--721-2b6cb0?style=for-the-badge&logo=solidity&logoColor=white)](https://sepolia.etherscan.io/address/0x5C844C7Aa8e49A7dA32C3B65f69bB545b5216d2f)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+
+**Deployed contract:** [`0x5C844C7Aa8e49A7dA32C3B65f69bB545b5216d2f`](https://sepolia.etherscan.io/address/0x5C844C7Aa8e49A7dA32C3B65f69bB545b5216d2f) (Sepolia)
 
 </div>
 
@@ -221,12 +222,20 @@ npx hardhat run scripts/deploy.js --network sepolia
    - Add deployed contract address to `frontend/.env`
    - Set `VITE_CONTRACT_ADDRESS=0x...`
 
-### **Frontend Deployment**
+### **Frontend Deployment (GitHub Pages)**
 
-The frontend is configured for Vercel deployment with:
-- SPA routing support (`_redirects` file)
-- Environment variable configuration
-- Production build optimization
+The frontend deploys to GitHub Pages through `.github/workflows/deploy.yml`:
+
+1. In the repository, enable **Settings → Pages → Source: GitHub Actions**.
+2. Add repository **Variables** (Settings → Secrets and variables → Actions → Variables):
+   - `VITE_CONTRACT_ADDRESS` — the deployed contract address
+   - `VITE_SEPOLIA_RPC_URL` — a Sepolia RPC endpoint
+3. Add the **Secret** `VITE_WALLETCONNECT_PROJECT_ID` (Actions → Secrets).
+4. Push to `main`; the workflow runs contract tests, lints and builds the frontend, then publishes to
+   `https://subhajitlucky.github.io/quantumTicket/`.
+
+Deep links are supported through a generated `404.html` fallback, and the Vite base path switches to
+`/quantumTicket/` automatically when `GITHUB_PAGES=true` is set by the workflow.
 
 ## 🔐 **Security Considerations**
 
@@ -234,8 +243,9 @@ The frontend is configured for Vercel deployment with:
 - ✅ **Environment Variables** - All secrets use environment variables
 - ✅ **Contract Addresses** - Public addresses are safe to commit
 - ✅ **OpenZeppelin** - Using audited security patterns
-- ⚠️ **Refund Security** - Organizers must keep balance for refunds
-- ⚠️ **Scanner Authorization** - Only authorized scanners can validate tickets
+- ✅ **Refund Escrow** - Ticket sales stay escrowed until the event date, so pre-event refunds are always funded
+- ✅ **Fee Isolation** - Platform fees are tracked separately and can never touch organizer escrow
+- ⚠️ **Scanner Authorization** - Only authorized scanners (or the ticket owner) can validate tickets
 
 ## 📊 **Smart Contract Details**
 

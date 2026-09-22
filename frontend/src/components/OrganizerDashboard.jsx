@@ -19,6 +19,7 @@ const OrganizerDashboard = () => {
     const { contract } = useContract();
 
     const [organizerBalance, setOrganizerBalance] = useState(null);
+    const [withdrawableBalance, setWithdrawableBalance] = useState(null);
     const [myEvents, setMyEvents] = useState([]);
     const [showAllEvents, setShowAllEvents] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +54,15 @@ const OrganizerDashboard = () => {
             // Get balance
             const balance = await getOrganizerBalance(contract, account);
             setOrganizerBalance(balance);
+
+            // Withdrawable amount unlocks per event once the event date passes.
+            // Older deployments without the view fall back to the full balance.
+            try {
+                const withdrawable = await contract.getWithdrawableOrganizerFunds(account);
+                setWithdrawableBalance(withdrawable);
+            } catch {
+                setWithdrawableBalance(balance);
+            }
 
             // Get events organized by this wallet
             const totalEvents = await contract.getTotalEvents();
@@ -189,8 +199,10 @@ const OrganizerDashboard = () => {
                 setError('You can only refund tickets for your own events');
             } else if (err.message.includes('Ticket already used')) {
                 setError('Cannot refund a used ticket');
-            } else if (err.message.includes('Insufficient balance')) {
-                setError('Insufficient balance for refund. Withdraw is blocked until refund balance is available.');
+            } else if (err.message.includes('Refunds closed after event')) {
+                setError('Refunds are only available before the event date');
+            } else if (err.message.includes('Refund escrow unavailable')) {
+                setError('Refund escrow is unavailable for this ticket');
             } else {
                 setError(err.message || 'Failed to refund ticket');
             }
@@ -299,28 +311,34 @@ const OrganizerDashboard = () => {
                 {/* Balance Card */}
                 <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
                     <div className="card-header">
-                        <h3 className="card-title">💰 Available Balance</h3>
+                        <h3 className="card-title">💰 Withdrawable Balance</h3>
                     </div>
                     <div style={{ textAlign: 'center', padding: 'var(--space-4)' }}>
                         <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'var(--primary-500)' }}>
-                            {organizerBalance
-                                ? ethers.utils.formatEther(organizerBalance)
+                            {withdrawableBalance
+                                ? ethers.utils.formatEther(withdrawableBalance)
                                 : '0'} ETH
                         </div>
                         <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-2)' }}>
-                            Accumulated from ticket sales
+                            Unlocked after each event date · Total earned:{' '}
+                            {organizerBalance ? ethers.utils.formatEther(organizerBalance) : '0'} ETH
                         </p>
-                        <p style={{ color: 'var(--warning-500)', marginTop: 'var(--space-2)', fontSize: '0.9rem' }}>
-                            Keep enough ETH here to cover refunds; withdrawing everything will block refunds.
+                        <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-2)', fontSize: '0.9rem' }}>
+                            Ticket sales stay escrowed until the event starts, so pre-event refunds are always funded.
                         </p>
                         <button
                             onClick={handleWithdraw}
-                            disabled={isWithdrawing || !organizerBalance || organizerBalance.isZero()}
+                            disabled={isWithdrawing || !withdrawableBalance || withdrawableBalance.isZero()}
                             className="btn btn-primary"
                             style={{ marginTop: 'var(--space-4)' }}
                         >
                             {isWithdrawing ? <span className="spinner"></span> : 'Withdraw Funds'}
                         </button>
+                        {withdrawableBalance && withdrawableBalance.isZero() && organizerBalance && !organizerBalance.isZero() && (
+                            <p style={{ color: 'var(--text-secondary)', marginTop: 'var(--space-2)', fontSize: '0.85rem' }}>
+                                Sales unlock when your events begin.
+                            </p>
+                        )}
                         {withdrawSuccess && (
                             <div className="alert alert-success" style={{ marginTop: 'var(--space-3)' }}>
                                 {withdrawSuccess}

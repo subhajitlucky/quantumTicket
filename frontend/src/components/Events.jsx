@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useWallet } from '../hooks/useWallet';
 import { useContract } from '../hooks/useContract';
-import { ethers } from 'ethers';
 import { invalidateTicketCache } from '../services/ticketIndexer';
 import { fetchActiveEvents, getReadOnlyContract, invalidateEventsCache } from '../services/readOnlyProvider';
 
@@ -289,7 +288,9 @@ const Events = () => {
                 <div key={event.id} className="event-card">
                   <div className="event-image">
                     <span className="event-icon">🎫</span>
-                    <div className="event-category">Live Event</div>
+                    <div className="event-category">
+                      {isEventSoldOut(event) ? 'Sold Out' : isEventStarted(event) ? 'Started' : 'Upcoming'}
+                    </div>
                   </div>
 
                   <div className="event-content">

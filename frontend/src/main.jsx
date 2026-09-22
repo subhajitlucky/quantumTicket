@@ -9,15 +9,6 @@ import './index.css'
 import App from './App.jsx'
 import { config } from './wallet/config/wagmiConfig'
 
-// Debug logging for environment variables
-console.log('🔍 Environment Check:', {
-  projectId: import.meta.env.VITE_WALLETCONNECT_PROJECT_ID ? '✅ Set' : '❌ Missing',
-  contractAddress: import.meta.env.VITE_CONTRACT_ADDRESS,
-  mode: import.meta.env.MODE,
-  dev: import.meta.env.DEV,
-  prod: import.meta.env.PROD
-});
-
 // Create a query client with optimized settings
 const queryClient = new QueryClient({
   defaultOptions: {

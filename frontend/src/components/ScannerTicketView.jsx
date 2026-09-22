@@ -235,8 +235,8 @@ const ScannerTicketView = () => {
                             <div style={{
                                 padding: 'var(--space-4)',
                                 background: ticketInfo.isUsed
-                                    ? 'var(--error-500/20)'
-                                    : 'var(--success-500/20)',
+                                    ? 'color-mix(in srgb, var(--status-error) 20%, transparent)'
+                                    : 'color-mix(in srgb, var(--status-success) 20%, transparent)',
                                 borderRadius: '8px',
                                 marginBottom: 'var(--space-4)',
                                 textAlign: 'center'
